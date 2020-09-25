@@ -10,6 +10,8 @@ import os
 import re
 import shutil
 import warnings
+# iOS: need sys to know which system is running
+import sys
 
 pjoin = os.path.join
 
@@ -30,9 +32,15 @@ class KernelSpec(HasTraits):
     language = Unicode()
     env = Dict()
     resource_dir = Unicode()
-    interrupt_mode = CaselessStrEnum(
-        ['message', 'signal'], default_value='signal'
-    )
+# iOS: signal could result in strange side effects.
+    if (sys.platform == "darwin" and os.uname().machine.startswith("iP")):
+        interrupt_mode = CaselessStrEnum(
+                ['message', 'signal'], default_value='message'
+                )
+    else: 
+        interrupt_mode = CaselessStrEnum(
+                ['message', 'signal'], default_value='signal'
+                )
     metadata = Dict()
 
     @classmethod

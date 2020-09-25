@@ -382,7 +382,8 @@ class KernelManager(ConnectionFileMixin):
         # Stop monitoring for restarting while we shutdown.
         self.stop_restarter()
 
-        if now:
+        # iOS: _kill_kernel() results in unclean memory:
+        if now and not (sys.platform == "darwin" and os.uname().machine.startswith("iP")):
             self._kill_kernel()
         else:
             self.request_shutdown(restart=restart)
