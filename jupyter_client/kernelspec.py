@@ -32,7 +32,7 @@ class KernelSpec(HasTraits):
     language = Unicode()
     env = Dict()
     resource_dir = Unicode()
-# iOS: signal could result in strange side effects.
+# iOS: signal could result in strange side effects (like killing the entire app).
     if (sys.platform == "darwin" and os.uname().machine.startswith("iP")):
         interrupt_mode = CaselessStrEnum(
                 ['message', 'signal'], default_value='message'

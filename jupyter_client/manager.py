@@ -382,8 +382,7 @@ class KernelManager(ConnectionFileMixin):
         # Stop monitoring for restarting while we shutdown.
         self.stop_restarter()
 
-        # iOS: _kill_kernel() results in unclean memory:
-        if now and not (sys.platform == "darwin" and os.uname().machine.startswith("iP")):
+        if now:
             self._kill_kernel()
         else:
             self.request_shutdown(restart=restart)
@@ -681,7 +680,8 @@ class AsyncKernelManager(KernelManager):
             # Signal the kernel to terminate (sends SIGKILL on Unix and calls
             # TerminateProcess() on Win32).
             try:
-                if hasattr(signal, 'SIGKILL'):
+                # iOS: signal_kernel kills the entire application, not just the kernel
+                if hasattr(signal, 'SIGKILL') and not (sys.platform == "darwin" and os.uname().machine.startswith("iP")) :
                     await self.signal_kernel(signal.SIGKILL)
                 else:
                     self.kernel.kill()
