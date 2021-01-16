@@ -913,6 +913,13 @@ class Session(Configurable):
             # pyzmq didn't copy the first parts of the message, so we'll do it
             for i in range(minlen):
                 msg_list[i] = msg_list[i].bytes
+        # iOS: pyzmq 21 sometimes sends _cffi_backend.buffer. We convert to bytes here:
+        import sys
+        if (sys.platform == "darwin" and os.uname().machine.startswith("iP")):
+            for i in range(minlen):
+                if not type(msg_list[i]) is bytes:
+                    msg_list[i] = bytes(msg_list[i])
+        #
         if self.auth is not None:
             signature = msg_list[0]
             if not signature:
