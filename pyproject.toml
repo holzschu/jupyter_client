@@ -1,0 +1,28 @@
+[tool.black]
+line-length = 100
+skip-string-normalization = true
+target_version = [
+    "py36",
+    "py37",
+    "py38",
+]
+
+[tool.jupyter-releaser]
+skip = ["check-links"]
+
+[tool.check-manifest]
+ignore = [".mailmap", "*.yml", "*.yaml"]
+
+[tool.tbump.version]
+current = "7.0.6"
+regex = '''
+  (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)
+  ((?P<channel>a|b|rc|.dev)(?P<release>\d+))?
+'''
+
+[tool.tbump.git]
+message_template = "Bump to {new_version}"
+tag_template = "v{new_version}"
+
+[[tool.tbump.file]]
+src = "jupyter_client/_version.py"

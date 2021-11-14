@@ -23,6 +23,7 @@ with Jupyter kernels.
 
    kernels
    wrapperkernels
+   provisioning
 
 .. toctree::
    :maxdepth: 2
@@ -35,6 +36,7 @@ with Jupyter kernels.
     :caption: Changes
 
     changelog
+    migration
 
 
 Indices and tables
@@ -43,4 +45,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

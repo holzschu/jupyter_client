@@ -36,7 +36,7 @@ The basic design is explained in the following diagram:
    :width: 450px
    :alt: IPython kernel/frontend messaging architecture.
    :align: center
-   :target: ../_images/frontend-kernel.png
+   :target: ./figs/frontend-kernel.png
 
 A single kernel can be simultaneously connected to one or more frontends.  The
 kernel has dedicated sockets for the following functions:
@@ -582,14 +582,14 @@ The main example being ``%load``.
       "replace": bool,
     }
 
-**edit**: open a file for editing.
+**edit_magic**: open a file for editing.
 
 Triggered by `%edit`. Only the QtConsole currently supports edit payloads.
 
 .. sourcecode:: python
 
     {
-      "source": "edit",
+      "source": "edit_magic",
       "filename": "/path/to/file.py", # the file to edit
       "line_number": int, # the line number to start with
     }
@@ -782,6 +782,9 @@ Message type: ``history_request``::
 Message type: ``history_reply``::
 
     content = {
+      # 'ok' if the request succeeded or 'error', with error information as in all other replies.
+      'status' : 'ok',
+
       # A list of 3 tuples, either:
       # (session, line_number, input) or
       # (session, line_number, (input, output)),
@@ -899,6 +902,9 @@ Message type: ``comm_info_request``::
 Message type: ``comm_info_reply``::
 
     content = {
+        # 'ok' if the request succeeded or 'error', with error information as in all other replies.
+        'status' : 'ok',
+
         # A dictionary of the comms, indexed by uuids.
         'comms': {
             comm_id: {
@@ -968,7 +974,7 @@ Message type: ``kernel_info_reply``::
             # Only needed if it differs from the 'name' field.
             'pygments_lexer': str,
 
-            # Codemirror mode, for for highlighting in the notebook.
+            # Codemirror mode, for highlighting in the notebook.
             # Only needed if it differs from the 'name' field.
             'codemirror_mode': str or dict,
 
@@ -980,7 +986,11 @@ Message type: ``kernel_info_reply``::
 
         # A banner of information about the kernel,
         # which may be desplayed in console environments.
-        'banner' : str,
+        'banner': str,
+
+        # A boolean flag which tells if the kernel supports debugging in the notebook.
+        # Default is False
+        'debugger': bool,
 
         # Optional: A list of dictionaries, each with keys 'text' and 'url'.
         # These will be displayed in the help menu in the notebook UI.
@@ -1048,6 +1058,9 @@ Message type: ``shutdown_request``::
 Message type: ``shutdown_reply``::
 
     content = {
+        # 'ok' if the request succeeded or 'error', with error information as in all other replies.
+        'status' : 'ok',
+
         'restart' : bool # False if final shutdown, or True if shutdown precedes a restart
     }
 
@@ -1078,7 +1091,10 @@ Message type: ``interrupt_request``::
 
 Message type: ``interrupt_reply``::
 
-    content = {}
+    content = {
+        # 'ok' if the request succeeded or 'error', with error information as in all other replies.
+        'status' : 'ok'
+    }
 
 .. versionadded:: 5.3
 
@@ -1104,7 +1120,11 @@ Debug requests and replies are sent over the `control` channel to prevent queuin
 Additions to the DAP
 ~~~~~~~~~~~~~~~~~~~~
 
-The Jupyter debugger protocol makes two additions to the DAP, the `dumpCell` request and response, and the `debugInfo` request and response messages.
+The Jupyter debugger protocol makes several additions to the DAP:
+
+- the `dumpCell` request and response messages
+- the `debugInfo` request and response messages
+- the `inspectVariables` request and response messages
 
 In order to support the debugging of notebook cells and of Jupyter consoles, which are not based on source files, we need a message to submit code to the debugger to which breakpoints can be added.
 
@@ -1137,7 +1157,7 @@ In order to support page reloading, or a client connecting at a later stage, Jup
           'command' : 'debugInfo'
       }
 
-  Content of `debugInfo` response::
+  Content of the `debugInfo` response::
 
       {
           'type' : 'response',
@@ -1154,11 +1174,65 @@ In order to support page reloading, or a client connecting at a later stage, Jup
                       'breakpoints' : list(source_breakpoints)  # list of breakpoints for that source file
                   }
               ],
-              'stoppedThreads': list(int),  # threads in which the debugger is currently in a stopped state
+              'stoppedThreads' : list(int),  # threads in which the debugger is currently in a stopped state
+              'richRendering' : bool,  # whether the debugger supports rich rendering of variables
+              'exceptionPaths' : list(str),  # exception names used to match leaves or nodes in a tree of exception 
           }
       }
 
   The `source_breakpoint` schema is specified by the Debug Adapter Protocol.
+
+The `inspectVariables` is meant to retrieve the values of all the variables that have been defined in the kernel. It is a DAP `Request` with no extra argument.
+
+  Content of the `inspectVariables` request::
+
+      {
+          'type' : 'request',
+          'command' : 'inspectVariables'
+      }
+
+  Content of the `inspectVariables` response::
+
+      {
+          'type' : 'response',
+          'success' : bool,
+          'body' : {
+              'variables' : [ # variables defined in the notebook.
+                  {
+                      'name' : str,
+                      'variablesReference' : int,
+                      'value' : str,
+                      'type' : str
+                  }
+              ]
+          }
+      }
+
+The ``richInspectVariables`` request allows to get the rich representation of a variable that has been defined in the kernel.
+
+  Content of the ``richInspectVariables`` request::
+
+      {
+          'type' : 'request',
+          'command' : 'richInspectVariables',
+          'arguments' : {
+              'variableName' : str,
+              # The frameId is used when the debugger hit a breakpoint only.
+              'frameId' : int
+          }
+      }
+
+  Content of the ``richInspectVariables`` response::
+
+      {
+          'type' : 'response',
+          'success' : bool,
+          'body' : {
+              # Dictionary of rich reprensentations of the variable
+              'data' : dict,
+              'metadata' : dict
+          }
+      }
 
 .. versionadded:: 5.5
 
