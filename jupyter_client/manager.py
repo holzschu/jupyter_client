@@ -376,6 +376,10 @@ class KernelManager(ConnectionFileMixin):
             self._shutdown_status = _ShutdownStatus.SigtermRequest
             await ensure_async(self._send_kernel_sigterm())
 
+        # iOS: we cannot send a kill signal, so we just wait:
+        if (sys.platform == "darwin" and os.uname().machine.startswith("iP")):
+            return
+
         try:
             await asyncio.wait_for(
                 self._async_wait(pollinterval=pollinterval), timeout=waittime / 2
