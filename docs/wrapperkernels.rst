@@ -14,7 +14,9 @@ such as bash.
      A simple kernel for bash, written using this machinery
 
 The `Metakernel <https://github.com/Calysto/metakernel/#>`_ library makes it easier to
-write a wrapper kernel that includes a base set of line and cell magics.  It also has a ``ProcessKernel`` subclass that makes it easy to write kernels that use ``pexpect``.
+write a wrapper kernel that includes a base set of line and cell magics.  It
+also has a ``ProcessKernel`` subclass that makes it easy to write kernels that
+use ``pexpect``.
 See `Octave Kernel <https://github.com/Calysto/octave_kernel>`_ as an example.
 
 
@@ -134,7 +136,7 @@ You can override a number of other methods to improve the functionality of your
 kernel. All of these methods should return a dictionary as described in the
 relevant section of the :doc:`messaging spec <messaging>`.
 
-.. class:: MyKernel
+.. class:: MyCustomKernel
 
    .. method:: do_complete(code, cursor_pos)
 

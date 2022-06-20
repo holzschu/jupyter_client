@@ -2,6 +2,220 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 7.3.4
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.3.3...ca4cb2d6a4b95a6925de85a47b323d2235032c74))
+
+### Bugs fixed
+
+- Revert latest changes to `ThreadedZMQSocketChannel` because they break Qtconsole [#803](https://github.com/jupyter/jupyter_client/pull/803) ([@ccordoba12](https://github.com/ccordoba12))
+
+### Maintenance and upkeep improvements
+
+- Fix sphinx 5.0 support [#804](https://github.com/jupyter/jupyter_client/pull/804) ([@blink1073](https://github.com/blink1073))
+- [pre-commit.ci] pre-commit autoupdate [#799](https://github.com/jupyter/jupyter_client/pull/799) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-06-07&to=2022-06-08&type=c))
+
+[@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2022-06-07..2022-06-08&type=Issues) | [@ccordoba12](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Accordoba12+updated%3A2022-06-07..2022-06-08&type=Issues) | [@pre-commit-ci](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Apre-commit-ci+updated%3A2022-06-07..2022-06-08&type=Issues)
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
+## 7.3.3
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.3.2...37ca37d865db260e7da6fa85339be450d6fd3c3c))
+
+### Bugs fixed
+
+- Add local-provisioner entry point to pyproject.toml Fixes #800 [#801](https://github.com/jupyter/jupyter_client/pull/801) ([@utkonos](https://github.com/utkonos))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-06-06&to=2022-06-07&type=c))
+
+[@utkonos](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Autkonos+updated%3A2022-06-06..2022-06-07&type=Issues)
+
+## 7.3.2
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.3.1...c81771416d9e09e0e92be799f3e8549d0db57e43))
+
+### Enhancements made
+
+- Correct `Any` type annotations. [#791](https://github.com/jupyter/jupyter_client/pull/791) ([@joouha](https://github.com/joouha))
+
+### Maintenance and upkeep improvements
+
+- [pre-commit.ci] pre-commit autoupdate [#792](https://github.com/jupyter/jupyter_client/pull/792) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Use hatch backend [#789](https://github.com/jupyter/jupyter_client/pull/789) ([@blink1073](https://github.com/blink1073))
+- [pre-commit.ci] pre-commit autoupdate [#788](https://github.com/jupyter/jupyter_client/pull/788) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Use flit build backend [#781](https://github.com/jupyter/jupyter_client/pull/781) ([@blink1073](https://github.com/blink1073))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-05-08&to=2022-06-06&type=c))
+
+[@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2022-05-08..2022-06-06&type=Issues) | [@joouha](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ajoouha+updated%3A2022-05-08..2022-06-06&type=Issues) | [@pre-commit-ci](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Apre-commit-ci+updated%3A2022-05-08..2022-06-06&type=Issues)
+
+## 7.3.1
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.3.0...4df8a48071649d3488a880e61293efd26b7aff1d))
+
+### Bugs fixed
+
+- Check that channels exist before asking if they are alive [#785](https://github.com/jupyter/jupyter_client/pull/785) ([@ccordoba12](https://github.com/ccordoba12))
+- Unicode error correction using Error Handler [#779](https://github.com/jupyter/jupyter_client/pull/779) ([@hxawax](https://github.com/hxawax))
+
+### Maintenance and upkeep improvements
+
+- Allow bot PRs to be automatically labeled [#784](https://github.com/jupyter/jupyter_client/pull/784) ([@blink1073](https://github.com/blink1073))
+- [pre-commit.ci] pre-commit autoupdate [#783](https://github.com/jupyter/jupyter_client/pull/783) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-04-25&to=2022-05-08&type=c))
+
+[@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2022-04-25..2022-05-08&type=Issues) | [@ccordoba12](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Accordoba12+updated%3A2022-04-25..2022-05-08&type=Issues) | [@hxawax](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ahxawax+updated%3A2022-04-25..2022-05-08&type=Issues) | [@pre-commit-ci](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Apre-commit-ci+updated%3A2022-04-25..2022-05-08&type=Issues)
+
+## 7.3.0
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.2.2...fa597d9cdcdc277abda2c3cab4aeee1593d3a9e2))
+
+### Bugs fixed
+
+- Fix shutdown and cleanup behavior [#772](https://github.com/jupyter/jupyter_client/pull/772) ([@blink1073](https://github.com/blink1073))
+
+### Maintenance and upkeep improvements
+
+- [pre-commit.ci] pre-commit autoupdate [#773](https://github.com/jupyter/jupyter_client/pull/773) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#770](https://github.com/jupyter/jupyter_client/pull/770) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- Improve mypy config [#769](https://github.com/jupyter/jupyter_client/pull/769) ([@blink1073](https://github.com/blink1073))
+- Clean up pre-commit [#768](https://github.com/jupyter/jupyter_client/pull/768) ([@blink1073](https://github.com/blink1073))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-04-07&to=2022-04-25&type=c))
+
+[@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2022-04-07..2022-04-25&type=Issues) | [@pre-commit-ci](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Apre-commit-ci+updated%3A2022-04-07..2022-04-25&type=Issues)
+
+## 7.2.2
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.2.1...01b2095d96c81c56edf8f5df44e12e476b2bcd87))
+
+### Maintenance and upkeep improvements
+
+- Include py.typed file [#766](https://github.com/jupyter/jupyter_client/pull/766) ([@blink1073](https://github.com/blink1073))
+- [pre-commit.ci] pre-commit autoupdate [#765](https://github.com/jupyter/jupyter_client/pull/765) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- More Cleanup [#764](https://github.com/jupyter/jupyter_client/pull/764) ([@blink1073](https://github.com/blink1073))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-03-30&to=2022-04-07&type=c))
+
+[@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2022-03-30..2022-04-07&type=Issues) | [@davidbrochart](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Adavidbrochart+updated%3A2022-03-30..2022-04-07&type=Issues) | [@echarles](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Aecharles+updated%3A2022-03-30..2022-04-07&type=Issues) | [@pre-commit-ci](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Apre-commit-ci+updated%3A2022-03-30..2022-04-07&type=Issues)
+
+## 7.2.1
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.2.0...683e8dd96ecd52da48a85f67e4ae31d85f1c6616))
+
+### Maintenance and upkeep improvements
+
+- Handle Warnings [#760](https://github.com/jupyter/jupyter_client/pull/760) ([@blink1073](https://github.com/blink1073))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-03-29&to=2022-03-30&type=c))
+
+[@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2022-03-29..2022-03-30&type=Issues)
+
+## 7.2.0
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.1.2...098de3e51bd4ee1b1a3aded889e8f109ac5eff89))
+
+### Enhancements made
+
+- Update consoleapp.py [#733](https://github.com/jupyter/jupyter_client/pull/733) ([@you-n-g](https://github.com/you-n-g))
+
+### Bugs fixed
+
+- Json packer: handle TypeError and fallback to old json_clean [#752](https://github.com/jupyter/jupyter_client/pull/752) ([@martinRenou](https://github.com/martinRenou))
+- Prefer sending signals to kernel process group [#743](https://github.com/jupyter/jupyter_client/pull/743) ([@kevin-bates](https://github.com/kevin-bates))
+
+### Maintenance and upkeep improvements
+
+- Mock is not needed [#758](https://github.com/jupyter/jupyter_client/pull/758) ([@hroncok](https://github.com/hroncok))
+- Add pytest opts and clean up workflows [#757](https://github.com/jupyter/jupyter_client/pull/757) ([@blink1073](https://github.com/blink1073))
+- Clean up dependency handling [#750](https://github.com/jupyter/jupyter_client/pull/750) ([@blink1073](https://github.com/blink1073))
+- Use built in run cancellation [#742](https://github.com/jupyter/jupyter_client/pull/742) ([@blink1073](https://github.com/blink1073))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-01-21&to=2022-03-28&type=c))
+
+[@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2022-01-21..2022-03-28&type=Issues) | [@davidbrochart](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Adavidbrochart+updated%3A2022-01-21..2022-03-28&type=Issues) | [@echarles](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Aecharles+updated%3A2022-01-21..2022-03-28&type=Issues) | [@hroncok](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ahroncok+updated%3A2022-01-21..2022-03-28&type=Issues) | [@kevin-bates](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Akevin-bates+updated%3A2022-01-21..2022-03-28&type=Issues) | [@martinRenou](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3AmartinRenou+updated%3A2022-01-21..2022-03-28&type=Issues) | [@you-n-g](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ayou-n-g+updated%3A2022-01-21..2022-03-28&type=Issues)
+
+## 7.1.2
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.1.1...2c9fbf499f63d4287851021b8f8efc9d3c0e336e))
+
+### Bugs fixed
+
+- Await `kernel.ready` in `_async_shutdown_kernel` [#740](https://github.com/jupyter/jupyter_client/pull/740) ([@jtpio](https://github.com/jtpio))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-01-14&to=2022-01-21&type=c))
+
+[@jtpio](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ajtpio+updated%3A2022-01-14..2022-01-21&type=Issues) | [@Zsailer](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3AZsailer+updated%3A2022-01-14..2022-01-21&type=Issues)
+
+## 7.1.1
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.1.0...4428715b65741ddccac9305d318d4ace08fa711a))
+
+### Enhancements made
+
+- Further improvements to pending kernels managment [#732](https://github.com/jupyter/jupyter_client/pull/732) ([@Zsailer](https://github.com/Zsailer))
+
+### Maintenance and upkeep improvements
+
+- Test against all kernels in jupyter kernel test and clean up CI [#731](https://github.com/jupyter/jupyter_client/pull/731) ([@blink1073](https://github.com/blink1073))
+- Replace master with main [#729](https://github.com/jupyter/jupyter_client/pull/729) ([@davidbrochart](https://github.com/davidbrochart))
+
+### Documentation improvements
+
+- [DOC] improve kernel provisioner doc [#730](https://github.com/jupyter/jupyter_client/pull/730) ([@abzymeinsjtu](https://github.com/abzymeinsjtu))
+- add changelog for message spec [#525](https://github.com/jupyter/jupyter_client/pull/525) ([@minrk](https://github.com/minrk))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2021-11-22&to=2022-01-14&type=c))
+
+[@abzymeinsjtu](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Aabzymeinsjtu+updated%3A2021-11-22..2022-01-14&type=Issues) | [@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2021-11-22..2022-01-14&type=Issues) | [@BoPeng](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3ABoPeng+updated%3A2021-11-22..2022-01-14&type=Issues) | [@davidbrochart](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Adavidbrochart+updated%3A2021-11-22..2022-01-14&type=Issues) | [@minrk](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Aminrk+updated%3A2021-11-22..2022-01-14&type=Issues) | [@rgbkrk](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Argbkrk+updated%3A2021-11-22..2022-01-14&type=Issues) | [@willingc](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Awillingc+updated%3A2021-11-22..2022-01-14&type=Issues) | [@Zsailer](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3AZsailer+updated%3A2021-11-22..2022-01-14&type=Issues)
+
+## 7.1.0
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.0.6...6b76603578fd3a76fd577d3319393c9933f53ab0))
+
+### Enhancements made
+
+- Add support for pending kernels [#712](https://github.com/jupyter/jupyter_client/pull/712) ([@blink1073](https://github.com/blink1073))
+
+### Bugs fixed
+
+- Improve restarter logic [#717](https://github.com/jupyter/jupyter_client/pull/717) ([@vidartf](https://github.com/vidartf))
+- Set sticky bit only on the directory [#711](https://github.com/jupyter/jupyter_client/pull/711) ([@ci4ic4](https://github.com/ci4ic4))
+
+### Maintenance and upkeep improvements
+
+- Enforce labels on PRs [#720](https://github.com/jupyter/jupyter_client/pull/720) ([@blink1073](https://github.com/blink1073))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2021-10-01&to=2021-11-22&type=c))
+
+[@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2021-10-01..2021-11-22&type=Issues) | [@ci4ic4](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Aci4ic4+updated%3A2021-10-01..2021-11-22&type=Issues) | [@davidbrochart](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Adavidbrochart+updated%3A2021-10-01..2021-11-22&type=Issues) | [@kevin-bates](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Akevin-bates+updated%3A2021-10-01..2021-11-22&type=Issues) | [@vidartf](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Avidartf+updated%3A2021-10-01..2021-11-22&type=Issues)
+
 ## 7.0.6
 
 ([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.0.5...58b11df0ecb729effacc59ce28e9f431fa9c6a4d))
@@ -19,8 +233,6 @@
 ([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2021-09-29&to=2021-10-01&type=c))
 
 [@martinRenou](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3AmartinRenou+updated%3A2021-09-29..2021-10-01&type=Issues)
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 7.0.5
 
@@ -471,7 +683,7 @@ GitHub](https://github.com/jupyter/jupyter_client/milestones/5.1)
 
 ## 5.0
 
-#### 5.0.1
+### 5.0.1
 
 [5.0.1 on
 GitHub](https://github.com/jupyter/jupyter_client/milestones/5.0.1)
@@ -479,7 +691,7 @@ GitHub](https://github.com/jupyter/jupyter_client/milestones/5.0.1)
 - Update internal protocol version number to 5.1, which should have
   been done in 5.0.0.
 
-#### 5.0.0
+### 5.0.0
 
 [5.0.0 on
 GitHub](https://github.com/jupyter/jupyter_client/milestones/5.0)
@@ -529,7 +741,7 @@ Backward-incompatible changes:
 
 ## 4.4
 
-#### 4.4.0
+### 4.4.0
 
 [4.4 on
 GitHub](https://github.com/jupyter/jupyter_client/milestones/4.4)
@@ -542,7 +754,7 @@ GitHub](https://github.com/jupyter/jupyter_client/milestones/4.4)
 
 ## 4.3
 
-#### 4.3.0
+### 4.3.0
 
 [4.3 on
 GitHub](https://github.com/jupyter/jupyter_client/milestones/4.3)
@@ -553,21 +765,21 @@ GitHub](https://github.com/jupyter/jupyter_client/milestones/4.3)
 
 ## 4.2
 
-#### 4.2.2
+### 4.2.2
 
 [4.2.2 on
 GitHub](https://github.com/jupyter/jupyter_client/milestones/4.2.2)
 
 - Another fix for the `start_new_kernel` issue in 4.2.1 affecting slow-starting kernels.
 
-#### 4.2.1
+### 4.2.1
 
 [4.2.1 on
 GitHub](https://github.com/jupyter/jupyter_client/milestones/4.2.1)
 
 - Fix regression in 4.2 causing `start_new_kernel` to fail while waiting for kernels to become available.
 
-#### 4.2.0
+### 4.2.0
 
 [4.2.0 on
 GitHub](https://github.com/jupyter/jupyter_client/milestones/4.2)
@@ -584,7 +796,7 @@ GitHub](https://github.com/jupyter/jupyter_client/milestones/4.2)
 
 ## 4.1
 
-#### 4.1.0
+### 4.1.0
 
 [4.1.0 on
 GitHub](https://github.com/jupyter/jupyter_client/milestones/4.1)

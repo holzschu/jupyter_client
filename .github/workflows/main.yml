@@ -2,50 +2,28 @@ name: CI
 
 on:
   push:
+    branches: ["main"]
   pull_request:
 
-jobs:
-  check_duplicate_runs:
-    name: Check for duplicate runs
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    outputs:
-      should_skip: ${{ steps.skip_check.outputs.should_skip }}
-    steps:
-      - id: skip_check
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          concurrent_skipping: always
-          cancel_others: true
-          skip_after_successful_duplicate: true
-          paths_ignore: '["**/README.md", "**/CHANGELOG.md", "**/COPYING.md"]'
-          do_not_skip: '["pull_request"]'
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
-  # Run "pre-commit run --all-files"
+jobs:
+  # Run "pre-commit run --all-files --hook-stage=manual"
   pre-commit:
     name: Run pre-commit hook
-
-    needs: check_duplicate_runs
-    if: ${{ needs.check_duplicate_runs.outputs.should_skip != 'true' }}
-
     runs-on: ubuntu-latest
-    timeout-minutes: 2
-
-    env:
-      PYTHON_VERSION: 3.8
-
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
+      - name: Set up Python
+        uses: actions/setup-python@v3
       - name: Run pre-commit
         uses: pre-commit/action@v2.0.0
-
+        with:
+          extra_args: --all-files --hook-stage=manual
       - name: Help message if pre-commit fail
         if: ${{ failure() }}
         run: |
@@ -55,21 +33,25 @@ jobs:
           echo "or you can run by hand on staged files with"
           echo "    pre-commit run"
           echo "or after-the-fact on already committed files with"
-          echo "    pre-commit run --all-files"
+          echo "    pre-commit run --all-files --hook-stage=manual"
 
   build-n-test-n-coverage:
     name: Build, test and code coverage
-
-    needs: check_duplicate_runs
-    if: ${{ needs.check_duplicate_runs.outputs.should_skip != 'true' }}
-
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.7", "3.10"]
+        include:
+          - os: windows-latest
+            python-version: "3.9"
+          - os: ubuntu-latest
+            python-version: "pypy-3.8"
+          - os: macos-latest
+            python-version: "3.8"
 
     env:
       OS: ${{ matrix.os }}
@@ -78,50 +60,94 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Update pip
-        run: |
-          pip install --upgrade pip
-          pip install --upgrade wheel setuptools
-
-      - name: Get pip cache dir
-        id: pip-cache
-        run: |
-          echo "::set-output name=dir::$(pip cache dir)"
-
-      - name: Cache pip
-        uses: actions/cache@v2
-        with:
-          path: |
-            ${{ steps.pip-cache.outputs.dir }}
-            .mypy_cache
-          key: ${{ runner.os }}-python-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements*.txt') }}-git-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-python-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements*.txt') }}
-            ${{ runner.os }}-python-${{ matrix.python-version }}-pip-
-            ${{ runner.os }}-python
-            ${{ runner.os }}-
+      - name: Base Setup
+        uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
 
       - name: Install dependencies
         run: |
-          pip install --upgrade --upgrade-strategy eager --pre -e .[test]
+          pip install -e .[test]
           pip freeze
 
-      - name: Check types
-        run: mypy jupyter_client --exclude '\/tests|kernelspecapp|ioloop|runapp' --install-types --non-interactive
-
       - name: Run the tests
-        run: pytest --cov jupyter_client -v jupyter_client
-
-      - name: Build the docs
+        if: ${{ !startsWith(matrix.python-version, 'pypy') && !startsWith(matrix.os, 'windows') }}
         run: |
-          pip install -r requirements-doc.txt
-          cd docs
-          make html
+          args="-vv --cov jupyter_client --cov-branch --cov-report term-missing:skip-covered"
+          python -m pytest $args --cov-fail-under 70 || python -m pytest $args --lf
+      - name: Run the tests on pypy and windows
+        if: ${{ startsWith(matrix.python-version, 'pypy') || startsWith(matrix.os, 'windows') }}
+        run: |
+          python -m pytest -vv || python -m pytest -vv --lf
 
       - name: Code coverage
         run: codecov
+
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Base Setup
+        uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
+
+      - name: Build the docs
+        run: |
+          pip install ".[doc]"
+          cd docs
+          make html SPHINXOPTS="-W"
+
+  test_miniumum_verisons:
+    name: Test Minimum Versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+      - name: Base Setup
+        uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
+        with:
+          python_version: "3.7"
+      - name: Install miniumum versions
+        uses: jupyterlab/maintainer-tools/.github/actions/install-minimums@v1
+      - name: Run the unit tests
+        run: pytest -vv -W default jupyter_client || pytest -vv -W default jupyter_client --lf
+
+  test_prereleases:
+    name: Test Prereleases
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Base Setup
+        uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
+      - name: Install the Python dependencies
+        run: |
+          pip install --upgrade --upgrade-strategy eager --pre -e ".[test]"
+      - name: List installed packages
+        run: |
+          pip freeze
+          pip check
+      - name: Run the tests
+        run: |
+          pytest -vv jupyter_client || pytest -vv jupyter_client --lf
+
+  make_sdist:
+    name: Make SDist
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+      - uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
+      - uses: jupyterlab/maintainer-tools/.github/actions/make-sdist@v1
+
+  test_sdist:
+    runs-on: ubuntu-latest
+    needs: [make_sdist]
+    name: Install from SDist and Test
+    timeout-minutes: 20
+    steps:
+      - uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
+      - uses: jupyterlab/maintainer-tools/.github/actions/test-sdist@v1
+        with:
+          test_command: pytest --vv || pytest -vv --lf

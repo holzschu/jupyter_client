@@ -49,7 +49,7 @@ class HBChannel(Thread):
 
     def __init__(
         self,
-        context: zmq.asyncio.Context = None,
+        context: t.Optional[zmq.asyncio.Context] = None,
         session: t.Optional[Session] = None,
         address: t.Union[t.Tuple[str, int], str] = "",
     ):
@@ -101,6 +101,7 @@ class HBChannel(Thread):
         assert self.context is not None
         self.socket = self.context.socket(zmq.REQ)
         self.socket.linger = 1000
+        assert self.address is not None
         self.socket.connect(self.address)
 
         self.poller.register(self.socket, zmq.POLLIN)
@@ -109,6 +110,7 @@ class HBChannel(Thread):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self._async_run())
+        loop.close()
 
     async def _async_run(self) -> None:
         """The thread's main activity.  Call start() instead."""
@@ -191,9 +193,7 @@ HBChannelABC.register(HBChannel)
 class ZMQSocketChannel(object):
     """A ZMQ socket in an async API"""
 
-    def __init__(
-        self, socket: zmq.sugar.socket.Socket, session: Session, loop: t.Any = None
-    ) -> None:
+    def __init__(self, socket: zmq.asyncio.Socket, session: Session, loop: t.Any = None) -> None:
         """Create a channel.
 
         Parameters
@@ -207,17 +207,17 @@ class ZMQSocketChannel(object):
         """
         super().__init__()
 
-        self.socket: t.Optional[zmq.sugar.socket.Socket] = socket
+        self.socket: t.Optional[zmq.asyncio.Socket] = socket
         self.session = session
 
-    async def _recv(self, **kwargs) -> t.Dict[str, t.Any]:
+    async def _recv(self, **kwargs: t.Any) -> t.Dict[str, t.Any]:
         assert self.socket is not None
         msg = await self.socket.recv_multipart(**kwargs)
         ident, smsg = self.session.feed_identities(msg)
         return self.session.deserialize(smsg)
 
     async def get_msg(self, timeout: t.Optional[float] = None) -> t.Dict[str, t.Any]:
-        """ Gets a message if there is one that is ready. """
+        """Gets a message if there is one that is ready."""
         assert self.socket is not None
         if timeout is not None:
             timeout *= 1000  # seconds to ms
@@ -230,7 +230,7 @@ class ZMQSocketChannel(object):
             raise Empty
 
     async def get_msgs(self) -> t.List[t.Dict[str, t.Any]]:
-        """ Get all messages that are currently ready. """
+        """Get all messages that are currently ready."""
         msgs = []
         while True:
             try:
@@ -240,7 +240,7 @@ class ZMQSocketChannel(object):
         return msgs
 
     async def msg_ready(self) -> bool:
-        """ Is there a message that has been received? """
+        """Is there a message that has been received?"""
         assert self.socket is not None
         return bool(await self.socket.poll(timeout=0))
 

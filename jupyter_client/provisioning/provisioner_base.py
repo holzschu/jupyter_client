@@ -10,7 +10,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from traitlets.config import Instance  # type: ignore
+from traitlets.config import Instance
 from traitlets.config import LoggingConfigurable
 from traitlets.config import Unicode
 
@@ -185,7 +185,7 @@ class KernelProvisionerBase(ABC, LoggingConfigurable, metaclass=KernelProvisione
 
         NOTE: The superclass method must always be called first to ensure proper serialization.
         """
-        provisioner_info: Dict[str, Any] = dict()
+        provisioner_info: Dict[str, Any] = {}
         provisioner_info['kernel_id'] = self.kernel_id
         provisioner_info['connection_info'] = self.connection_info
         return provisioner_info
@@ -206,12 +206,21 @@ class KernelProvisionerBase(ABC, LoggingConfigurable, metaclass=KernelProvisione
 
     def get_shutdown_wait_time(self, recommended: float = 5.0) -> float:
         """
-        Returns the time allowed for a complete shutdown.  This may vary by provisioner.
+        Returns the time allowed for a complete shutdown. This may vary by provisioner.
 
         This method is called from `KernelManager.finish_shutdown()` during the graceful
         phase of its kernel shutdown sequence.
 
         The recommended value will typically be what is configured in the kernel manager.
+        """
+        return recommended
+
+    def get_stable_start_time(self, recommended: float = 10.0) -> float:
+        """
+        Returns the expected upper bound for a kernel (re-)start to complete.
+        This may vary by provisioner.
+
+        The recommended value will typically be what is configured in the kernel restarter.
         """
         return recommended
 
@@ -229,7 +238,7 @@ class KernelProvisionerBase(ABC, LoggingConfigurable, metaclass=KernelProvisione
             # If set, it can bork all the things.
             env.pop('PYTHONEXECUTABLE', None)
 
-    def __apply_env_substitutions(self, substitution_values: Dict[str, str]):
+    def __apply_env_substitutions(self, substitution_values: Dict[str, str]) -> Dict[str, str]:
         """
         Walks entries in the kernelspec's env stanza and applies substitutions from current env.
 

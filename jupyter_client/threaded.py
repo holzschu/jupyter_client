@@ -15,7 +15,7 @@ from typing import Optional
 from typing import Union
 
 import zmq
-from traitlets import Instance  # type: ignore
+from traitlets import Instance
 from traitlets import Type
 from zmq import ZMQError
 from zmq.eventloop import ioloop
@@ -68,8 +68,9 @@ class ThreadedZMQSocketChannel(object):
         evt = Event()
 
         def setup_stream():
+            assert self.socket is not None
             self.stream = zmqstream.ZMQStream(self.socket, self.ioloop)
-            self.stream.on_recv(self._handle_recv)
+            self.stream.on_recv(self._handle_recv)  # type:ignore[arg-type]
             evt.set()
 
         assert self.ioloop is not None
@@ -107,6 +108,7 @@ class ThreadedZMQSocketChannel(object):
         """
 
         def thread_send():
+            assert self.session is not None
             self.session.send(self.stream, msg)
 
         assert self.ioloop is not None
@@ -164,7 +166,7 @@ class ThreadedZMQSocketChannel(object):
         # gets to perform at least one full poll.
         stop_time = time.time() + timeout
         assert self.ioloop is not None
-        for i in range(2):
+        for _ in range(2):
             self._flushed = False
             self.ioloop.add_callback(self._flush)
             while not self._flushed and time.time() < stop_time:
@@ -241,6 +243,9 @@ class IOLoopThread(Thread):
         self.join()
         self.close()
         self.ioloop = None
+
+    def __del__(self):
+        self.close()
 
     def close(self) -> None:
         if self.ioloop is not None:

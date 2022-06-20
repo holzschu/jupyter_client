@@ -10,10 +10,10 @@ import warnings
 # iOS: need sys to know which system is running
 import sys
 
-from jupyter_core.paths import jupyter_data_dir  # type: ignore
+from jupyter_core.paths import jupyter_data_dir
 from jupyter_core.paths import jupyter_path
 from jupyter_core.paths import SYSTEM_JUPYTER_PATH
-from traitlets import Bool  # type: ignore
+from traitlets import Bool
 from traitlets import CaselessStrEnum
 from traitlets import Dict
 from traitlets import HasTraits
@@ -22,7 +22,7 @@ from traitlets import observe
 from traitlets import Set
 from traitlets import Type
 from traitlets import Unicode
-from traitlets.config import LoggingConfigurable  # type: ignore
+from traitlets.config import LoggingConfigurable
 
 from .provisioning import KernelProvisionerFactory as KPF
 
@@ -33,6 +33,8 @@ NATIVE_KERNEL_NAME = "python3"
 
 class KernelSpec(HasTraits):
     argv = List()
+    name = Unicode()
+    mimetype = Unicode()
     display_name = Unicode()
     language = Unicode()
     env = Dict()
@@ -179,7 +181,7 @@ class KernelSpecManager(LoggingConfigurable):
     def _deprecated_trait(self, change):
         """observer for deprecated traits"""
         old_attr = change.name
-        new_attr, version = self._deprecated_aliases.get(old_attr)
+        new_attr, version = self._deprecated_aliases[old_attr]
         new_value = getattr(self, new_attr)
         if new_value != change.new:
             # only warn if different
@@ -416,7 +418,7 @@ class KernelSpecManager(LoggingConfigurable):
     def install_native_kernel_spec(self, user=False):
         """DEPRECATED: Use ipykernel.kernelspec.install"""
         warnings.warn(
-            "install_native_kernel_spec is deprecated." " Use ipykernel.kernelspec import install.",
+            "install_native_kernel_spec is deprecated. Use ipykernel.kernelspec import install.",
             stacklevel=2,
         )
         from ipykernel.kernelspec import install

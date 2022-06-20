@@ -1,6 +1,7 @@
 """Testing utils for jupyter_client tests
 
 """
+import json
 import os
 import sys
 from tempfile import TemporaryDirectory
@@ -17,6 +18,26 @@ from jupyter_client import MultiKernelManager
 pjoin = os.path.join
 
 skip_win32 = pytest.mark.skipif(sys.platform.startswith("win"), reason="Windows")
+
+
+sample_kernel_json = {
+    "argv": ["cat", "{connection_file}"],
+    "display_name": "Test kernel",
+}
+
+
+def install_kernel(kernels_dir, argv=None, name="test", display_name=None):
+    """install a kernel in a kernels directory"""
+    kernel_dir = pjoin(kernels_dir, name)
+    os.makedirs(kernel_dir)
+    kernel_json = {
+        "argv": argv or sample_kernel_json["argv"],
+        "display_name": display_name or sample_kernel_json["display_name"],
+    }
+    json_file = pjoin(kernel_dir, "kernel.json")
+    with open(json_file, "w") as f:
+        json.dump(kernel_json, f)
+    return kernel_dir
 
 
 class test_env(object):
@@ -41,7 +62,11 @@ class test_env(object):
 
     def stop(self):
         self.env_patch.stop()
-        self.test_dir.cleanup()
+        try:
+            self.test_dir.cleanup()
+        except (PermissionError, NotADirectoryError):
+            if os.name != 'nt':
+                raise
 
     def __enter__(self):
         self.start()
@@ -111,51 +136,51 @@ def subclass_recorder(f):
 class KMSubclass(RecordCallMixin):
     @subclass_recorder
     def start_kernel(self, **kw):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def shutdown_kernel(self, now=False, restart=False):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def restart_kernel(self, now=False, **kw):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def interrupt_kernel(self):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def request_shutdown(self, restart=False):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def finish_shutdown(self, waittime=None, pollinterval=0.1, restart=False):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def _launch_kernel(self, kernel_cmd, **kw):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def _kill_kernel(self):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def cleanup_resources(self, restart=False):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def signal_kernel(self, signum: int):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def is_alive(self):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def _send_kernel_sigterm(self, restart: bool = False):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
 
 class SyncKMSubclass(KMSubclass, KernelManager):
@@ -176,43 +201,43 @@ class MKMSubclass(RecordCallMixin):
 
     @subclass_recorder
     def get_kernel(self, kernel_id):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def remove_kernel(self, kernel_id):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def start_kernel(self, kernel_name=None, **kwargs):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def shutdown_kernel(self, kernel_id, now=False, restart=False):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def restart_kernel(self, kernel_id, now=False):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def interrupt_kernel(self, kernel_id):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def request_shutdown(self, kernel_id, restart=False):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def finish_shutdown(self, kernel_id, waittime=None, pollinterval=0.1, restart=False):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def cleanup_resources(self, kernel_id, restart=False):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
     @subclass_recorder
     def shutdown_all(self, now=False):
-        """ Record call and defer to superclass """
+        """Record call and defer to superclass"""
 
 
 class SyncMKMSubclass(MKMSubclass, MultiKernelManager):
