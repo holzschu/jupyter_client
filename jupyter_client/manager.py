@@ -55,6 +55,16 @@ class _ShutdownStatus(Enum):
 F = t.TypeVar('F', bound=t.Callable[..., t.Any])
 
 
+def _get_future() -> t.Union[Future, CFuture]:
+    """Get an appropriate Future object"""
+    try:
+        asyncio.get_running_loop()
+        return Future()
+    except RuntimeError:
+        # No event loop running, use concurrent future
+        return CFuture()
+
+
 def in_pending_state(method: F) -> F:
     """Sets the kernel to a pending state by
     creating a fresh Future for the KernelManager's `ready`
@@ -65,11 +75,8 @@ def in_pending_state(method: F) -> F:
     @functools.wraps(method)
     async def wrapper(self, *args, **kwargs):
         # Create a future for the decorated method
-        try:
-            self._ready = Future()
-        except RuntimeError:
-            # No event loop running, use concurrent future
-            self._ready = CFuture()
+        if self._attempted_start or not self._ready:
+            self._ready = _get_future()
         try:
             # call wrapped method, await, and set the result or exception.
             out = await method(self, *args, **kwargs)
@@ -91,18 +98,13 @@ class KernelManager(ConnectionFileMixin):
     This version starts kernels with Popen.
     """
 
-    _ready: t.Union[Future, CFuture]
+    _ready: t.Optional[t.Union[Future, CFuture]]
 
     def __init__(self, *args, **kwargs):
         super().__init__(**kwargs)
         self._shutdown_status = _ShutdownStatus.Unset
-        # Create a place holder future.
-        try:
-            asyncio.get_running_loop()
-            self._ready = Future()
-        except RuntimeError:
-            # No event loop running, use concurrent future
-            self._ready = CFuture()
+        self._attempted_start = False
+        self._ready = None
 
     _created_context: Bool = Bool(False)
 
@@ -187,6 +189,8 @@ class KernelManager(ConnectionFileMixin):
     @property
     def ready(self) -> t.Union[CFuture, Future]:
         """A future that resolves when the kernel process has started for the first time"""
+        if not self._ready:
+            self._ready = _get_future()
         return self._ready
 
     @property
@@ -306,8 +310,9 @@ class KernelManager(ConnectionFileMixin):
         assert self.provisioner is not None
         connection_info = await self.provisioner.launch_kernel(kernel_cmd, **kw)
         assert self.provisioner.has_process
-        # Provisioner provides the connection information.  Load into kernel manager and write file.
-        self._force_connection_info(connection_info)
+        # Provisioner provides the connection information.  Load into kernel manager
+        # and write the connection file, if not already done.
+        self._reconcile_connection_info(connection_info)
 
     _launch_kernel = run_sync(_async_launch_kernel)
 
@@ -382,6 +387,7 @@ class KernelManager(ConnectionFileMixin):
              keyword arguments that are passed down to build the kernel_cmd
              and launching the kernel (e.g. Popen kwargs).
         """
+        self._attempted_start = True
         kernel_cmd, kw = await ensure_async(self.pre_start_kernel(**kw))
 
         # launch the kernel subprocess

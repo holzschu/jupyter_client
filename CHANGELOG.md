@@ -2,6 +2,153 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## 7.4.7
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.4.6...56df36b535710d2c247a2749deec456c75191af5))
+
+### Bugs fixed
+
+- Fix connection reconciliation to handle restarts [#882](https://github.com/jupyter/jupyter_client/pull/882) ([@kevin-bates](https://github.com/kevin-bates))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-11-15&to=2022-11-16&type=c))
+
+[@meeseeksmachine](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ameeseeksmachine+updated%3A2022-11-15..2022-11-16&type=Issues)
+
+<!-- <END NEW CHANGELOG ENTRY> -->
+
+## 7.4.6
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.4.5...3394591f161be4a19f9e61c66ba510d7e29afd59))
+
+### Bugs fixed
+
+- Reconcile connection information [#879](https://github.com/jupyter/jupyter_client/pull/879) ([@kevin-bates](https://github.com/kevin-bates))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-11-10&to=2022-11-15&type=c))
+
+[@meeseeksmachine](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ameeseeksmachine+updated%3A2022-11-10..2022-11-15&type=Issues)
+
+## 7.4.5
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.4.4...d27c8a497c6cbb1a232fbbe75cb1fd0f53faa9b0))
+
+### Maintenance and upkeep improvements
+
+- \[7.x\] Handle Jupyter Core Warning [#875](https://github.com/jupyter/jupyter_client/pull/875) ([@blink1073](https://github.com/blink1073))
+- Clean up 7.x workflows [#865](https://github.com/jupyter/jupyter_client/pull/865) ([@blink1073](https://github.com/blink1073))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-10-25&to=2022-11-10&type=c))
+
+[@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2022-10-25..2022-11-10&type=Issues)
+
+## 7.4.4
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.4.3...4029f6cad9223b1287980a1f0e966ff66557386e))
+
+### Bugs fixed
+
+- Workaround for launch bug [#861](https://github.com/jupyter/jupyter_client/pull/861) ([@blink1073](https://github.com/blink1073))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-10-19&to=2022-10-25&type=c))
+
+[@meeseeksmachine](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ameeseeksmachine+updated%3A2022-10-19..2022-10-25&type=Issues)
+
+## 7.4.3
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.4.2...aa549b27d3622b1c381275777785f84dd3d5253d))
+
+### Bugs fixed
+
+- Defer creation of ready future [#858](https://github.com/jupyter/jupyter_client/pull/858) ([@blink1073](https://github.com/blink1073))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-10-11&to=2022-10-19&type=c))
+
+[@meeseeksmachine](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ameeseeksmachine+updated%3A2022-10-11..2022-10-19&type=Issues)
+
+## 7.4.2
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.4.1...0a45cc41e4ce73911e4367eddc1f0001a8431fc0))
+
+### Bugs fixed
+
+- Fix ready promise and session send [#852](https://github.com/jupyter/jupyter_client/pull/852) ([@blink1073](https://github.com/blink1073))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-10-11&to=2022-10-11&type=c))
+
+[@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2022-10-11..2022-10-11&type=Issues)
+
+## 7.4.1
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.4.0...0d87835d82d485aa3e870a63e76768bf439c3fe4))
+
+### Bugs fixed
+
+- Revert "Backport PR #845: Fix pending kernels again" [#851](https://github.com/jupyter/jupyter_client/pull/851) ([@blink1073](https://github.com/blink1073))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-10-11&to=2022-10-11&type=c))
+
+[@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2022-10-11..2022-10-11&type=Issues)
+
+## 7.4.0
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.3.5...3c0107f72e65363e8dfc99d7801a7de048e5f071))
+
+### Bugs fixed
+
+- Backport PR #845: Fix pending kernels again [#848](https://github.com/jupyter/jupyter_client/pull/848) ([@blink1073](https://github.com/blink1073))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-08-25&to=2022-10-11&type=c))
+
+[@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2022-08-25..2022-10-11&type=Issues) | [@ccordoba12](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Accordoba12+updated%3A2022-08-25..2022-10-11&type=Issues) | [@davidbrochart](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Adavidbrochart+updated%3A2022-08-25..2022-10-11&type=Issues) | [@minrk](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Aminrk+updated%3A2022-08-25..2022-10-11&type=Issues) | [@Zsailer](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3AZsailer+updated%3A2022-08-25..2022-10-11&type=Issues)
+
+## 7.3.5
+
+([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.3.4...bc5ded5439ca55bd6740885eb3a44ca6bc3e2243))
+
+### Enhancements made
+
+- add `AsyncKernelClient` to `doc/api/client.rst` [#819](https://github.com/jupyter/jupyter_client/pull/819) ([@helioz11](https://github.com/helioz11))
+
+### Bugs fixed
+
+- Use tornado 6.2's PeriodicCallback in restarter [#822](https://github.com/jupyter/jupyter_client/pull/822) ([@vidartf](https://github.com/vidartf))
+- Make \_stdin_hook_default async [#814](https://github.com/jupyter/jupyter_client/pull/814) ([@davidbrochart](https://github.com/davidbrochart))
+
+### Maintenance and upkeep improvements
+
+- [pre-commit.ci] pre-commit autoupdate [#824](https://github.com/jupyter/jupyter_client/pull/824) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#821](https://github.com/jupyter/jupyter_client/pull/821) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#820](https://github.com/jupyter/jupyter_client/pull/820) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#818](https://github.com/jupyter/jupyter_client/pull/818) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#816](https://github.com/jupyter/jupyter_client/pull/816) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#815](https://github.com/jupyter/jupyter_client/pull/815) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#812](https://github.com/jupyter/jupyter_client/pull/812) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#810](https://github.com/jupyter/jupyter_client/pull/810) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#809](https://github.com/jupyter/jupyter_client/pull/809) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+- [pre-commit.ci] pre-commit autoupdate [#807](https://github.com/jupyter/jupyter_client/pull/807) ([@pre-commit-ci](https://github.com/pre-commit-ci))
+
+### Contributors to this release
+
+([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-06-08&to=2022-08-25&type=c))
+
+[@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2022-06-08..2022-08-25&type=Issues) | [@davidbrochart](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Adavidbrochart+updated%3A2022-06-08..2022-08-25&type=Issues) | [@helioz11](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ahelioz11+updated%3A2022-06-08..2022-08-25&type=Issues) | [@pre-commit-ci](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Apre-commit-ci+updated%3A2022-06-08..2022-08-25&type=Issues) | [@vidartf](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Avidartf+updated%3A2022-06-08..2022-08-25&type=Issues)
+
 ## 7.3.4
 
 ([Full Changelog](https://github.com/jupyter/jupyter_client/compare/v7.3.3...ca4cb2d6a4b95a6925de85a47b323d2235032c74))
@@ -20,8 +167,6 @@
 ([GitHub contributors page for this release](https://github.com/jupyter/jupyter_client/graphs/contributors?from=2022-06-07&to=2022-06-08&type=c))
 
 [@blink1073](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Ablink1073+updated%3A2022-06-07..2022-06-08&type=Issues) | [@ccordoba12](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Accordoba12+updated%3A2022-06-07..2022-06-08&type=Issues) | [@pre-commit-ci](https://github.com/search?q=repo%3Ajupyter%2Fjupyter_client+involves%3Apre-commit-ci+updated%3A2022-06-07..2022-06-08&type=Issues)
-
-<!-- <END NEW CHANGELOG ENTRY> -->
 
 ## 7.3.3
 
