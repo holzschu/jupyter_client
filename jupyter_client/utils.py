@@ -3,47 +3,21 @@ utils:
 - provides utility wrappers to run asynchronous functions in a blocking environment.
 - vendor functions from ipython_genutils that should be retired at some point.
 """
-import asyncio
-import inspect
+from __future__ import annotations
+
 import os
+from typing import Sequence
+
+from jupyter_core.utils import ensure_async, run_sync  # noqa: F401  # noqa: F401
+
+from .session import utcnow  # noqa
 
 
-def run_sync(coro):
-    def wrapped(*args, **kwargs):
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            # Workaround for bugs.python.org/issue39529.
-            try:
-                loop = asyncio.get_event_loop_policy().get_event_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-        import nest_asyncio  # type: ignore
-
-        nest_asyncio.apply(loop)
-        future = asyncio.ensure_future(coro(*args, **kwargs), loop=loop)
-        try:
-            return loop.run_until_complete(future)
-        except BaseException as e:
-            future.cancel()
-            raise e
-
-    wrapped.__doc__ = coro.__doc__
-    return wrapped
-
-
-async def ensure_async(obj):
-    if inspect.isawaitable(obj):
-        return await obj
-    return obj
-
-
-def _filefind(filename, path_dirs=None):
+def _filefind(filename: str, path_dirs: str | Sequence[str] | None = None) -> str:
     """Find a file by looking through a sequence of paths.
 
     This iterates through a sequence of paths looking for a file and returns
-    the full, absolute path of the first occurence of the file.  If no set of
+    the full, absolute path of the first occurrence of the file.  If no set of
     path dirs is given, the filename is tested as is, after running through
     :func:`expandvars` and :func:`expanduser`.  Thus a simple call::
 
@@ -85,17 +59,15 @@ def _filefind(filename, path_dirs=None):
 
     for path in path_dirs:
         if path == ".":
-            path = os.getcwd()
+            path = os.getcwd()  # noqa
         testname = _expand_path(os.path.join(path, filename))
         if os.path.isfile(testname):
             return os.path.abspath(testname)
-
-    raise IOError(
-        "File {!r} does not exist in any of the search paths: {!r}".format(filename, path_dirs)
-    )
+    msg = f"File {filename!r} does not exist in any of the search paths: {path_dirs!r}"
+    raise OSError(msg)
 
 
-def _expand_path(s):
+def _expand_path(s: str) -> str:
     """Expand $VARS and ~names in a string, like a shell
 
     :Examples:

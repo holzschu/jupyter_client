@@ -1,7 +1,7 @@
 Making simple Python wrapper kernels
 ====================================
 
-You can re-use IPython's kernel machinery to easily make new kernels.
+You can reuse IPython's kernel machinery to easily make new kernels.
 This is useful for languages that have Python bindings, such as `Hy
 <https://github.com/hylang/hy/>`_ (see
 `Calysto Hy <https://github.com/Calysto/calysto_hy/#>`_), or languages
@@ -19,6 +19,7 @@ also has a ``ProcessKernel`` subclass that makes it easy to write kernels that
 use ``pexpect``.
 See `Octave Kernel <https://github.com/Calysto/octave_kernel>`_ as an example.
 
+If releasing a wrapper kernel as a Python package, see the steps in :ref:`packaging-kernels`.
 
 Required steps
 --------------
@@ -86,7 +87,7 @@ Example
 
 .. seealso::
 
-    `echo_kernel <https://github.com/jupyter/echo_kernel>`__
+    `echo_kernel <https://github.com/jupyter/echo_kernel>`_
       A packaged, installable version of the condensed example below.
 
 ``echokernel.py`` will simply echo any input it's given to stdout::

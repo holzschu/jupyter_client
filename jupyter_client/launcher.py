@@ -3,12 +3,9 @@
 # Distributed under the terms of the Modified BSD License.
 import os
 import sys
-from subprocess import PIPE
-from subprocess import Popen
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
+import warnings
+from subprocess import PIPE, Popen
+from typing import Any, Dict, List, Optional
 
 from traitlets.log import get_logger
 
@@ -69,7 +66,7 @@ def launch_kernel(
     # stderr are all invalid.
     redirect_out = sys.executable.endswith("pythonw.exe")
     if redirect_out:
-        blackhole = open(os.devnull, "w")
+        blackhole = open(os.devnull, "w")  # noqa
         _stdout = blackhole if stdout is None else stdout
         _stderr = blackhole if stderr is None else stderr
     else:
@@ -78,13 +75,13 @@ def launch_kernel(
     env = env if (env is not None) else os.environ.copy()
 
     kwargs = kw.copy()
-    main_args = dict(
-        stdin=_stdin,
-        stdout=_stdout,
-        stderr=_stderr,
-        cwd=cwd,
-        env=env,
-    )
+    main_args = {
+        "stdin": _stdin,
+        "stdout": _stdout,
+        "stderr": _stderr,
+        "cwd": cwd,
+        "env": env,
+    }
     kwargs.update(main_args)
 
     # Spawn a kernel.
@@ -110,10 +107,10 @@ def launch_kernel(
             )
         except:  # noqa
             from _subprocess import (
-                GetCurrentProcess,
                 CREATE_NEW_PROCESS_GROUP,
                 DUPLICATE_SAME_ACCESS,
                 DuplicateHandle,
+                GetCurrentProcess,
             )
 
         # create a handle on the parent to be inherited
@@ -155,7 +152,7 @@ def launch_kernel(
     try:
         # Allow to use ~/ in the command or its arguments
         cmd = [os.path.expanduser(s) for s in cmd]
-        proc = Popen(cmd, **kwargs)
+        proc = Popen(cmd, **kwargs)  # noqa
     except Exception as ex:
         try:
             msg = "Failed to run command:\n{}\n    PATH={!r}\n    with kwargs:\n{!r}\n"
@@ -165,19 +162,21 @@ def launch_kernel(
             msg = msg.format(cmd, env.get("PATH", os.defpath), without_env)
             get_logger().error(msg)
         except Exception as ex2:  # Don't let a formatting/logger issue lead to the wrong exception
-            print(f"Failed to run command: '{cmd}' due to exception: {ex}")
-            print(f"The following exception occurred handling the previous failure: {ex2}")
+            warnings.warn(f"Failed to run command: '{cmd}' due to exception: {ex}", stacklevel=2)
+            warnings.warn(
+                f"The following exception occurred handling the previous failure: {ex2}",
+                stacklevel=2,
+            )
         raise ex
 
     if sys.platform == "win32":
-        # Attach the interrupt event to the Popen objet so it can be used later.
+        # Attach the interrupt event to the Popen object so it can be used later.
         proc.win32_interrupt_event = interrupt_event
 
     # Clean up pipes created to work around Popen bug.
-    if redirect_in:
-        if stdin is None:
-            assert proc.stdin is not None
-            proc.stdin.close()
+    if redirect_in and stdin is None:
+        assert proc.stdin is not None
+        proc.stdin.close()
 
     return proc
 

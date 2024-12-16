@@ -1,30 +1,43 @@
 """A kernel manager with a tornado IOLoop"""
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
+import typing as t
+
+import zmq
 from tornado import ioloop
-from traitlets import Instance
-from traitlets import Type
+from traitlets import Instance, Type
 from zmq.eventloop.zmqstream import ZMQStream
 
-from .restarter import AsyncIOLoopKernelRestarter
-from .restarter import IOLoopKernelRestarter
-from jupyter_client.manager import AsyncKernelManager
-from jupyter_client.manager import KernelManager
+from ..manager import AsyncKernelManager, KernelManager
+from .restarter import AsyncIOLoopKernelRestarter, IOLoopKernelRestarter
 
 
-def as_zmqstream(f):
-    def wrapped(self, *args, **kwargs):
-        socket = f(self, *args, **kwargs)
+def as_zmqstream(f: t.Any) -> t.Callable:
+    """Convert a socket to a zmq stream."""
+
+    def wrapped(self: t.Any, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        save_socket_class = None
+        # zmqstreams only support sync sockets
+        if self.context._socket_class is not zmq.Socket:
+            save_socket_class = self.context._socket_class
+            self.context._socket_class = zmq.Socket
+        try:
+            socket = f(self, *args, **kwargs)
+        finally:
+            if save_socket_class:
+                # restore default socket class
+                self.context._socket_class = save_socket_class
         return ZMQStream(socket, self.loop)
 
     return wrapped
 
 
 class IOLoopKernelManager(KernelManager):
+    """An io loop kernel manager."""
 
     loop = Instance("tornado.ioloop.IOLoop")
 
-    def _loop_default(self):
+    def _loop_default(self) -> ioloop.IOLoop:
         return ioloop.IOLoop.current()
 
     restarter_class = Type(
@@ -37,9 +50,10 @@ class IOLoopKernelManager(KernelManager):
         ),
         config=True,
     )
-    _restarter = Instance("jupyter_client.ioloop.IOLoopKernelRestarter", allow_none=True)
+    _restarter: t.Any = Instance("jupyter_client.ioloop.IOLoopKernelRestarter", allow_none=True)
 
-    def start_restarter(self):
+    def start_restarter(self) -> None:
+        """Start the restarter."""
         if self.autorestart and self.has_kernel:
             if self._restarter is None:
                 self._restarter = self.restarter_class(
@@ -47,10 +61,10 @@ class IOLoopKernelManager(KernelManager):
                 )
             self._restarter.start()
 
-    def stop_restarter(self):
-        if self.autorestart:
-            if self._restarter is not None:
-                self._restarter.stop()
+    def stop_restarter(self) -> None:
+        """Stop the restarter."""
+        if self.autorestart and self._restarter is not None:
+            self._restarter.stop()
 
     connect_shell = as_zmqstream(KernelManager.connect_shell)
     connect_control = as_zmqstream(KernelManager.connect_control)
@@ -60,10 +74,11 @@ class IOLoopKernelManager(KernelManager):
 
 
 class AsyncIOLoopKernelManager(AsyncKernelManager):
+    """An async ioloop kernel manager."""
 
     loop = Instance("tornado.ioloop.IOLoop")
 
-    def _loop_default(self):
+    def _loop_default(self) -> ioloop.IOLoop:
         return ioloop.IOLoop.current()
 
     restarter_class = Type(
@@ -76,9 +91,12 @@ class AsyncIOLoopKernelManager(AsyncKernelManager):
         ),
         config=True,
     )
-    _restarter = Instance("jupyter_client.ioloop.AsyncIOLoopKernelRestarter", allow_none=True)
+    _restarter: t.Any = Instance(
+        "jupyter_client.ioloop.AsyncIOLoopKernelRestarter", allow_none=True
+    )
 
-    def start_restarter(self):
+    def start_restarter(self) -> None:
+        """Start the restarter."""
         if self.autorestart and self.has_kernel:
             if self._restarter is None:
                 self._restarter = self.restarter_class(
@@ -86,10 +104,10 @@ class AsyncIOLoopKernelManager(AsyncKernelManager):
                 )
             self._restarter.start()
 
-    def stop_restarter(self):
-        if self.autorestart:
-            if self._restarter is not None:
-                self._restarter.stop()
+    def stop_restarter(self) -> None:
+        """Stop the restarter."""
+        if self.autorestart and self._restarter is not None:
+            self._restarter.stop()
 
     connect_shell = as_zmqstream(AsyncKernelManager.connect_shell)
     connect_control = as_zmqstream(AsyncKernelManager.connect_control)

@@ -1,30 +1,22 @@
 """Tools for managing kernel specs"""
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
-import io
+from __future__ import annotations
+
 import json
 import os
 import re
 import shutil
+import typing as t
 import warnings
 # iOS: need sys to know which system is running
 import sys
 
-from jupyter_core.paths import jupyter_data_dir
-from jupyter_core.paths import jupyter_path
-from jupyter_core.paths import SYSTEM_JUPYTER_PATH
-from traitlets import Bool
-from traitlets import CaselessStrEnum
-from traitlets import Dict
-from traitlets import HasTraits
-from traitlets import List
-from traitlets import observe
-from traitlets import Set
-from traitlets import Type
-from traitlets import Unicode
+from jupyter_core.paths import SYSTEM_JUPYTER_PATH, jupyter_data_dir, jupyter_path
+from traitlets import Bool, CaselessStrEnum, Dict, HasTraits, List, Set, Type, Unicode, observe
 from traitlets.config import LoggingConfigurable
 
-from .provisioning import KernelProvisionerFactory as KPF
+from .provisioning import KernelProvisionerFactory as KPF  # noqa
 
 pjoin = os.path.join
 
@@ -32,7 +24,9 @@ NATIVE_KERNEL_NAME = "python3"
 
 
 class KernelSpec(HasTraits):
-    argv = List()
+    """A kernel spec model object."""
+
+    argv: List[str] = List()
     name = Unicode()
     mimetype = Unicode()
     display_name = Unicode()
@@ -47,29 +41,30 @@ class KernelSpec(HasTraits):
     metadata = Dict()
 
     @classmethod
-    def from_resource_dir(cls, resource_dir):
+    def from_resource_dir(cls: type[KernelSpec], resource_dir: str) -> KernelSpec:
         """Create a KernelSpec object by reading kernel.json
 
         Pass the path to the *directory* containing kernel.json.
         """
         kernel_file = pjoin(resource_dir, "kernel.json")
-        with io.open(kernel_file, "r", encoding="utf-8") as f:
+        with open(kernel_file, encoding="utf-8") as f:
             kernel_dict = json.load(f)
         return cls(resource_dir=resource_dir, **kernel_dict)
 
-    def to_dict(self):
-        d = dict(
-            argv=self.argv,
-            env=self.env,
-            display_name=self.display_name,
-            language=self.language,
-            interrupt_mode=self.interrupt_mode,
-            metadata=self.metadata,
-        )
+    def to_dict(self) -> dict[str, t.Any]:
+        """Convert the kernel spec to a dict."""
+        d = {
+            "argv": self.argv,
+            "env": self.env,
+            "display_name": self.display_name,
+            "language": self.language,
+            "interrupt_mode": self.interrupt_mode,
+            "metadata": self.metadata,
+        }
 
         return d
 
-    def to_json(self):
+    def to_json(self) -> str:
         """Serialise this kernelspec to a JSON object.
 
         Returns a string.
@@ -80,7 +75,7 @@ class KernelSpec(HasTraits):
 _kernel_name_pat = re.compile(r"^[a-z0-9._\-]+$", re.IGNORECASE)
 
 
-def _is_valid_kernel_name(name):
+def _is_valid_kernel_name(name: str) -> t.Any:
     """Check that a kernel name is valid."""
     # quote is not unicode-safe on Python 2
     return _kernel_name_pat.match(name)
@@ -92,12 +87,12 @@ _kernel_name_description = (
 )
 
 
-def _is_kernel_dir(path):
+def _is_kernel_dir(path: str) -> bool:
     """Is ``path`` a kernel directory?"""
     return os.path.isdir(path) and os.path.isfile(pjoin(path, "kernel.json"))
 
 
-def _list_kernels_in(dir):
+def _list_kernels_in(dir: str | None) -> dict[str, str]:
     """Return a mapping of kernel names to resource directories from dir.
 
     If dir is None or does not exist, returns an empty dict.
@@ -112,22 +107,26 @@ def _list_kernels_in(dir):
         key = f.lower()
         if not _is_valid_kernel_name(key):
             warnings.warn(
-                "Invalid kernelspec directory name (%s): %s" % (_kernel_name_description, path),
+                f"Invalid kernelspec directory name ({_kernel_name_description}): {path}",
                 stacklevel=3,
             )
         kernels[key] = path
     return kernels
 
 
-class NoSuchKernel(KeyError):
-    def __init__(self, name):
+class NoSuchKernel(KeyError):  # noqa
+    """An error raised when there is no kernel of a give name."""
+
+    def __init__(self, name: str) -> None:
+        """Initialize the error."""
         self.name = name
 
-    def __str__(self):
-        return "No such kernel named {}".format(self.name)
+    def __str__(self) -> str:
+        return f"No such kernel named {self.name}"
 
 
 class KernelSpecManager(LoggingConfigurable):
+    """A manager for kernel specs."""
 
     kernel_spec_class = Type(
         KernelSpec,
@@ -147,12 +146,12 @@ class KernelSpecManager(LoggingConfigurable):
 
     data_dir = Unicode()
 
-    def _data_dir_default(self):
+    def _data_dir_default(self) -> str:
         return jupyter_data_dir()
 
     user_kernel_dir = Unicode()
 
-    def _user_kernel_dir_default(self):
+    def _user_kernel_dir_default(self) -> str:
         return pjoin(self.data_dir, "kernels")
 
     whitelist = Set(
@@ -167,7 +166,7 @@ class KernelSpecManager(LoggingConfigurable):
         By default, all installed kernels are allowed.
         """,
     )
-    kernel_dirs = List(
+    kernel_dirs: List[str] = List(
         help="List of kernel directories to search. Later ones take priority over earlier."
     )
 
@@ -178,7 +177,7 @@ class KernelSpecManager(LoggingConfigurable):
     # Method copied from
     # https://github.com/jupyterhub/jupyterhub/blob/d1a85e53dccfc7b1dd81b0c1985d158cc6b61820/jupyterhub/auth.py#L143-L161
     @observe(*list(_deprecated_aliases))
-    def _deprecated_trait(self, change):
+    def _deprecated_trait(self, change: t.Any) -> None:
         """observer for deprecated traits"""
         old_attr = change.name
         new_attr, version = self._deprecated_aliases[old_attr]
@@ -188,35 +187,25 @@ class KernelSpecManager(LoggingConfigurable):
             # protects backward-compatible config from warnings
             # if they set the same value under both names
             self.log.warning(
-                (
-                    "{cls}.{old} is deprecated in jupyter_client "
-                    "{version}, use {cls}.{new} instead"
-                ).format(
-                    cls=self.__class__.__name__,
-                    old=old_attr,
-                    new=new_attr,
-                    version=version,
-                )
+                f"{self.__class__.__name__}.{old_attr} is deprecated in jupyter_client "
+                f"{version}, use {self.__class__.__name__}.{new_attr} instead"
             )
             setattr(self, new_attr, change.new)
 
-    def _kernel_dirs_default(self):
+    def _kernel_dirs_default(self) -> list[str]:
         dirs = jupyter_path("kernels")
         # At some point, we should stop adding .ipython/kernels to the path,
         # but the cost to keeping it is very small.
         try:
-            from IPython.paths import get_ipython_dir  # type: ignore
-        except ImportError:
-            try:
-                from IPython.utils.path import get_ipython_dir  # type: ignore
-            except ImportError:
-                # no IPython, no ipython dir
-                get_ipython_dir = None
-        if get_ipython_dir is not None:
+            # this should always be valid on IPython 3+
+            from IPython.paths import get_ipython_dir
+
             dirs.append(os.path.join(get_ipython_dir(), "kernels"))
+        except ModuleNotFoundError:
+            pass
         return dirs
 
-    def find_kernel_specs(self):
+    def find_kernel_specs(self) -> dict[str, str]:
         """Returns a dict mapping kernel names to resource directories."""
         d = {}
         for kernel_dir in self.kernel_dirs:
@@ -228,7 +217,7 @@ class KernelSpecManager(LoggingConfigurable):
 
         if self.ensure_native_kernel and NATIVE_KERNEL_NAME not in d:
             try:
-                from ipykernel.kernelspec import RESOURCES  # type: ignore
+                from ipykernel.kernelspec import RESOURCES
 
                 self.log.debug(
                     "Native kernel (%s) available from %s",
@@ -245,7 +234,7 @@ class KernelSpecManager(LoggingConfigurable):
         return d
         # TODO: Caching?
 
-    def _get_kernel_spec_by_name(self, kernel_name, resource_dir):
+    def _get_kernel_spec_by_name(self, kernel_name: str, resource_dir: str) -> KernelSpec:
         """Returns a :class:`KernelSpec` instance for a given kernel_name
         and resource_dir.
         """
@@ -258,7 +247,8 @@ class KernelSpecManager(LoggingConfigurable):
                 pass
             else:
                 if resource_dir == RESOURCES:
-                    kspec = self.kernel_spec_class(resource_dir=resource_dir, **get_kernel_dict())
+                    kdict = get_kernel_dict()
+                    kspec = self.kernel_spec_class(resource_dir=resource_dir, **kdict)
         if not kspec:
             kspec = self.kernel_spec_class.from_resource_dir(resource_dir)
 
@@ -267,7 +257,7 @@ class KernelSpecManager(LoggingConfigurable):
 
         return kspec
 
-    def _find_spec_directory(self, kernel_name):
+    def _find_spec_directory(self, kernel_name: str) -> str | None:
         """Find the resource directory of a named kernel spec"""
         for kernel_dir in [kd for kd in self.kernel_dirs if os.path.isdir(kd)]:
             files = os.listdir(kernel_dir)
@@ -283,8 +273,9 @@ class KernelSpecManager(LoggingConfigurable):
                 pass
             else:
                 return RESOURCES
+        return None
 
-    def get_kernel_spec(self, kernel_name):
+    def get_kernel_spec(self, kernel_name: str) -> KernelSpec:
         """Returns a :class:`KernelSpec` instance for the given kernel_name.
 
         Raises :exc:`NoSuchKernel` if the given kernel name is not found.
@@ -296,12 +287,12 @@ class KernelSpecManager(LoggingConfigurable):
 
         resource_dir = self._find_spec_directory(kernel_name.lower())
         if resource_dir is None:
-            self.log.warning(f"Kernelspec name {kernel_name} cannot be found!")
+            self.log.warning("Kernelspec name %s cannot be found!", kernel_name)
             raise NoSuchKernel(kernel_name)
 
         return self._get_kernel_spec_by_name(kernel_name, resource_dir)
 
-    def get_all_specs(self):
+    def get_all_specs(self) -> dict[str, t.Any]:
         """Returns a dict mapping kernel names to kernelspecs.
 
         Returns a dict of the form::
@@ -333,7 +324,7 @@ class KernelSpecManager(LoggingConfigurable):
                 self.log.warning("Error loading kernelspec %r", kname, exc_info=True)
         return res
 
-    def remove_kernel_spec(self, name):
+    def remove_kernel_spec(self, name: str) -> str:
         """Remove a kernel spec directory by name.
 
         Returns the path that was deleted.
@@ -352,7 +343,9 @@ class KernelSpecManager(LoggingConfigurable):
             shutil.rmtree(spec_dir)
         return spec_dir
 
-    def _get_destination_dir(self, kernel_name, user=False, prefix=None):
+    def _get_destination_dir(
+        self, kernel_name: str, user: bool = False, prefix: str | None = None
+    ) -> str:
         if user:
             return os.path.join(self.user_kernel_dir, kernel_name)
         elif prefix:
@@ -361,8 +354,13 @@ class KernelSpecManager(LoggingConfigurable):
             return os.path.join(SYSTEM_JUPYTER_PATH[0], "kernels", kernel_name)
 
     def install_kernel_spec(
-        self, source_dir, kernel_name=None, user=False, replace=None, prefix=None
-    ):
+        self,
+        source_dir: str,
+        kernel_name: str | None = None,
+        user: bool = False,
+        replace: bool | None = None,
+        prefix: str | None = None,
+    ) -> str:
         """Install a kernel spec by copying its directory.
 
         If ``kernel_name`` is not given, the basename of ``source_dir`` will
@@ -381,12 +379,12 @@ class KernelSpecManager(LoggingConfigurable):
             kernel_name = os.path.basename(source_dir)
         kernel_name = kernel_name.lower()
         if not _is_valid_kernel_name(kernel_name):
-            raise ValueError(
-                "Invalid kernel name %r.  %s" % (kernel_name, _kernel_name_description)
-            )
+            msg = f"Invalid kernel name {kernel_name!r}.  {_kernel_name_description}"
+            raise ValueError(msg)
 
         if user and prefix:
-            raise ValueError("Can't specify both user and prefix. Please choose one or the other.")
+            msg = "Can't specify both user and prefix. Please choose one or the other."
+            raise ValueError(msg)
 
         if replace is not None:
             warnings.warn(
@@ -415,7 +413,7 @@ class KernelSpecManager(LoggingConfigurable):
         self.log.info("Installed kernelspec %s in %s", kernel_name, destination)
         return destination
 
-    def install_native_kernel_spec(self, user=False):
+    def install_native_kernel_spec(self, user: bool = False) -> None:
         """DEPRECATED: Use ipykernel.kernelspec.install"""
         warnings.warn(
             "install_native_kernel_spec is deprecated. Use ipykernel.kernelspec import install.",
@@ -426,12 +424,12 @@ class KernelSpecManager(LoggingConfigurable):
         install(self, user=user)
 
 
-def find_kernel_specs():
+def find_kernel_specs() -> dict[str, str]:
     """Returns a dict mapping kernel names to resource directories."""
     return KernelSpecManager().find_kernel_specs()
 
 
-def get_kernel_spec(kernel_name):
+def get_kernel_spec(kernel_name: str) -> KernelSpec:
     """Returns a :class:`KernelSpec` instance for the given kernel_name.
 
     Raises KeyError if the given kernel name is not found.
@@ -439,15 +437,23 @@ def get_kernel_spec(kernel_name):
     return KernelSpecManager().get_kernel_spec(kernel_name)
 
 
-def install_kernel_spec(source_dir, kernel_name=None, user=False, replace=False, prefix=None):
+def install_kernel_spec(
+    source_dir: str,
+    kernel_name: str | None = None,
+    user: bool = False,
+    replace: bool | None = False,
+    prefix: str | None = None,
+) -> str:
+    """Install a kernel spec in a given directory."""
     return KernelSpecManager().install_kernel_spec(source_dir, kernel_name, user, replace, prefix)
 
 
 install_kernel_spec.__doc__ = KernelSpecManager.install_kernel_spec.__doc__
 
 
-def install_native_kernel_spec(user=False):
-    return KernelSpecManager().install_native_kernel_spec(user=user)
+def install_native_kernel_spec(user: bool = False) -> None:
+    """Install the native kernel spec."""
+    KernelSpecManager().install_native_kernel_spec(user=user)
 
 
 install_native_kernel_spec.__doc__ = KernelSpecManager.install_native_kernel_spec.__doc__

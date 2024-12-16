@@ -143,14 +143,14 @@ JSON serialised dictionary containing the following keys and values:
   characters.
 - **language**: The name of the language of the kernel.
   When loading notebooks, if no matching kernelspec key (may differ across machines)
-  is found, a kernel with a matching `language` will be used.
+  is found, a kernel with a matching ``language`` will be used.
   This allows a notebook written on any Python or Julia kernel to be properly associated
   with the user's Python or Julia kernel, even if they aren't listed under the
   same name as the author's.
 - **interrupt_mode** (optional): May be either ``signal`` or ``message`` and
   specifies how a client is supposed to interrupt cell execution on this kernel,
   either by sending an interrupt ``signal`` via the operating system's
-  signalling facilities (e.g. `SIGINT` on POSIX systems), or by sending an
+  signalling facilities (e.g. ``SIGINT`` on POSIX systems), or by sending an
   ``interrupt_request`` message on the control channel (see
   :ref:`msging_interrupt`). If this is not specified
   the client will default to ``signal`` mode.
@@ -184,3 +184,21 @@ To start the terminal console or the Qt console with a specific kernel::
 
 The notebook offers you the available kernels in a dropdown menu from the 'New'
 button.
+
+
+.. _packaging-kernels:
+
+Packaging
+=========
+
+To release your kernel as a Python package, we recommend following the pattern
+used in the `echo_kernel`_, which uses the `hatch`_  build backend and
+a build file that creates the kernel directory with the ``kernel.json`` and
+kernel icons, which is included as ``shared-data``, ending up in the
+``share/jupyter/kernels/`` folder in the user's installed environment.
+See `pyproject.toml`_ and `hatch_build.py`_ for more details.
+
+.. _hatch: https://hatch.pypa.io/latest/
+.. _pyproject.toml: https://github.com/jupyter/echo_kernel/blob/main/pyproject.toml
+.. _hatch_build.py: https://github.com/jupyter/echo_kernel/blob/main/hatch_build.py
+.. _echo_kernel: https://github.com/jupyter/echo_kernel

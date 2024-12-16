@@ -3,38 +3,28 @@ replies.
 """
 import asyncio
 import atexit
-import errno
 import time
-from threading import Event
+from concurrent.futures import Future
+from functools import partial
 from threading import Thread
-from typing import Any
-from typing import Awaitable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Union
+from typing import Any, Dict, List, Optional
 
 import zmq
-from traitlets import Instance
-from traitlets import Type
-from zmq import ZMQError
-from zmq.eventloop import ioloop
+from tornado.ioloop import IOLoop
+from traitlets import Instance, Type
+from traitlets.log import get_logger
 from zmq.eventloop import zmqstream
 
+from .channels import HBChannel
+from .client import KernelClient
 from .session import Session
-from jupyter_client import KernelClient
-from jupyter_client.channels import HBChannel
 
 # Local imports
 # import ZMQError in top-level namespace, to avoid ugly attribute-error messages
 # during garbage collection of threads at exit
 
 
-async def get_msg(msg: Awaitable) -> Union[List[bytes], List[zmq.Message]]:
-    return await msg
-
-
-class ThreadedZMQSocketChannel(object):
+class ThreadedZMQSocketChannel:
     """A ZMQ socket invoking a callback in the ioloop"""
 
     session = None
@@ -47,7 +37,7 @@ class ThreadedZMQSocketChannel(object):
         self,
         socket: Optional[zmq.Socket],
         session: Optional[Session],
-        loop: Optional[zmq.eventloop.ioloop.ZMQIOLoop],
+        loop: Optional[IOLoop],
     ) -> None:
         """Create a channel.
 
@@ -58,37 +48,69 @@ class ThreadedZMQSocketChannel(object):
         session : :class:`session.Session`
             The session to use.
         loop
-            A pyzmq ioloop to connect the socket to using a ZMQStream
+            A tornado ioloop to connect the socket to using a ZMQStream
         """
         super().__init__()
 
         self.socket = socket
         self.session = session
         self.ioloop = loop
-        evt = Event()
+        f: Future = Future()
 
-        def setup_stream():
-            assert self.socket is not None
-            self.stream = zmqstream.ZMQStream(self.socket, self.ioloop)
-            self.stream.on_recv(self._handle_recv)  # type:ignore[arg-type]
-            evt.set()
+        def setup_stream() -> None:
+            try:
+                assert self.socket is not None
+                self.stream = zmqstream.ZMQStream(self.socket, self.ioloop)
+                self.stream.on_recv(self._handle_recv)
+            except Exception as e:
+                f.set_exception(e)
+            else:
+                f.set_result(None)
 
         assert self.ioloop is not None
         self.ioloop.add_callback(setup_stream)
-        evt.wait()
+        # don't wait forever, raise any errors
+        f.result(timeout=10)
 
     _is_alive = False
 
     def is_alive(self) -> bool:
+        """Whether the channel is alive."""
         return self._is_alive
 
     def start(self) -> None:
+        """Start the channel."""
         self._is_alive = True
 
     def stop(self) -> None:
+        """Stop the channel."""
         self._is_alive = False
 
     def close(self) -> None:
+        """Close the channel."""
+        if self.stream is not None and self.ioloop is not None:
+            # c.f.Future for threadsafe results
+            f: Future = Future()
+
+            def close_stream() -> None:
+                try:
+                    if self.stream is not None:
+                        self.stream.close(linger=0)
+                        self.stream = None
+                except Exception as e:
+                    f.set_exception(e)
+                else:
+                    f.set_result(None)
+
+            self.ioloop.add_callback(close_stream)
+            # wait for result
+            try:
+                f.result(timeout=5)
+            except Exception as e:
+                log = get_logger()
+                msg = f"Error closing stream {self.stream}: {e}"
+                log.warning(msg, RuntimeWarning, stacklevel=2)
+
         if self.socket is not None:
             try:
                 self.socket.close(linger=0)
@@ -107,26 +129,25 @@ class ThreadedZMQSocketChannel(object):
         thread control of the action.
         """
 
-        def thread_send():
+        def thread_send() -> None:
             assert self.session is not None
             self.session.send(self.stream, msg)
 
         assert self.ioloop is not None
         self.ioloop.add_callback(thread_send)
 
-    def _handle_recv(self, future_msg: Awaitable) -> None:
+    def _handle_recv(self, msg_list: List) -> None:
         """Callback for stream.on_recv.
 
         Unpacks message, and calls handlers with it.
         """
         assert self.ioloop is not None
-        msg_list = self.ioloop._asyncio_event_loop.run_until_complete(get_msg(future_msg))
         assert self.session is not None
         ident, smsg = self.session.feed_identities(msg_list)
         msg = self.session.deserialize(smsg)
         # let client inspect messages
         if self._inspect:
-            self._inspect(msg)
+            self._inspect(msg)  # type:ignore[unreachable]
         self.call_handlers(msg)
 
     def call_handlers(self, msg: Dict[str, Any]) -> None:
@@ -164,13 +185,31 @@ class ThreadedZMQSocketChannel(object):
         """
         # We do the IOLoop callback process twice to ensure that the IOLoop
         # gets to perform at least one full poll.
-        stop_time = time.time() + timeout
+        stop_time = time.monotonic() + timeout
         assert self.ioloop is not None
+        if self.stream is None or self.stream.closed():
+            # don't bother scheduling flush on a thread if we're closed
+            _msg = "Attempt to flush closed stream"
+            raise OSError(_msg)
+
+        def flush(f: Any) -> None:
+            try:
+                self._flush()
+            except Exception as e:
+                f.set_exception(e)
+            else:
+                f.set_result(None)
+
         for _ in range(2):
-            self._flushed = False
-            self.ioloop.add_callback(self._flush)
-            while not self._flushed and time.time() < stop_time:
-                time.sleep(0.01)
+            f: Future = Future()
+            self.ioloop.add_callback(partial(flush, f))
+            # wait for async flush, re-raise any errors
+            timeout = max(stop_time - time.monotonic(), 0)
+            try:
+                f.result(max(stop_time - time.monotonic(), 0))
+            except TimeoutError:
+                # flush with a timeout means stop waiting, not raise
+                return
 
     def _flush(self) -> None:
         """Callback for :method:`self.flush`."""
@@ -185,7 +224,8 @@ class IOLoopThread(Thread):
     _exiting = False
     ioloop = None
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize an io loop thread."""
         super().__init__()
         self.daemon = True
 
@@ -203,33 +243,32 @@ class IOLoopThread(Thread):
         Don't return until self.ioloop is defined,
         which is created in the thread
         """
-        self._start_event = Event()
+        self._start_future: Future = Future()
         Thread.start(self)
-        self._start_event.wait()
+        # wait for start, re-raise any errors
+        self._start_future.result(timeout=10)
 
     def run(self) -> None:
         """Run my loop, ignoring EINTR events in the poller"""
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        self.ioloop = ioloop.IOLoop()
-        self.ioloop._asyncio_event_loop = loop
-        # signal that self.ioloop is defined
-        self._start_event.set()
-        while True:
-            try:
-                self.ioloop.start()
-            except ZMQError as e:
-                if e.errno == errno.EINTR:
-                    continue
-                else:
-                    raise
-            except Exception:
-                if self._exiting:
-                    break
-                else:
-                    raise
-            else:
-                break
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            async def assign_ioloop() -> None:
+                self.ioloop = IOLoop.current()
+
+            loop.run_until_complete(assign_ioloop())
+        except Exception as e:
+            self._start_future.set_exception(e)
+        else:
+            self._start_future.set_result(None)
+
+        loop.run_until_complete(self._async_run())
+
+    async def _async_run(self) -> None:
+        """Run forever (until self._exiting is set)"""
+        while not self._exiting:
+            await asyncio.sleep(1)
 
     def stop(self) -> None:
         """Stop the channel's event loop and join its thread.
@@ -238,16 +277,16 @@ class IOLoopThread(Thread):
         terminates. :class:`RuntimeError` will be raised if
         :meth:`~threading.Thread.start` is called again.
         """
-        if self.ioloop is not None:
-            self.ioloop.add_callback(self.ioloop.stop)
+        self._exiting = True
         self.join()
         self.close()
         self.ioloop = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.close()
 
     def close(self) -> None:
+        """Close the io loop thread."""
         if self.ioloop is not None:
             try:
                 self.ioloop.close(all_fds=True)
@@ -259,8 +298,10 @@ class ThreadedKernelClient(KernelClient):
     """A KernelClient that provides thread-safe sockets with async callbacks on message replies."""
 
     @property
-    def ioloop(self):
-        return self.ioloop_thread.ioloop
+    def ioloop(self) -> Optional[IOLoop]:  # type:ignore[override]
+        if self.ioloop_thread:
+            return self.ioloop_thread.ioloop
+        return None
 
     ioloop_thread = Instance(IOLoopThread, allow_none=True)
 
@@ -272,6 +313,7 @@ class ThreadedKernelClient(KernelClient):
         hb: bool = True,
         control: bool = True,
     ) -> None:
+        """Start the channels on the client."""
         self.ioloop_thread = IOLoopThread()
         self.ioloop_thread.start()
 
@@ -287,15 +329,16 @@ class ThreadedKernelClient(KernelClient):
             self.shell_channel._inspect = None
 
     def stop_channels(self) -> None:
+        """Stop the channels on the client."""
         super().stop_channels()
-        if self.ioloop_thread.is_alive():
+        if self.ioloop_thread and self.ioloop_thread.is_alive():
             self.ioloop_thread.stop()
 
-    iopub_channel_class = Type(ThreadedZMQSocketChannel)
-    shell_channel_class = Type(ThreadedZMQSocketChannel)
-    stdin_channel_class = Type(ThreadedZMQSocketChannel)
-    hb_channel_class = Type(HBChannel)
-    control_channel_class = Type(ThreadedZMQSocketChannel)
+    iopub_channel_class = Type(ThreadedZMQSocketChannel)  # type:ignore[arg-type]
+    shell_channel_class = Type(ThreadedZMQSocketChannel)  # type:ignore[arg-type]
+    stdin_channel_class = Type(ThreadedZMQSocketChannel)  # type:ignore[arg-type]
+    hb_channel_class = Type(HBChannel)  # type:ignore[arg-type]
+    control_channel_class = Type(ThreadedZMQSocketChannel)  # type:ignore[arg-type]
 
     def is_alive(self) -> bool:
         """Is the kernel process still running?"""

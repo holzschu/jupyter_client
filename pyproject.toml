@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling>=0.25"]
+requires = ["hatchling>=1.5"]
 build-backend = "hatchling.build"
 
 [project]
 name = "jupyter_client"
-version = "7.4.7"
+dynamic = ["version"]
 description = "Jupyter protocol implementation and client libraries"
 keywords = [ "Interactive", "Interpreter", "Shell", "Web",]
 classifiers = [
@@ -16,21 +16,16 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3"
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [
-    "entrypoints",
-    "jupyter_core>=4.9.2",
-    "nest-asyncio>=1.5.4",
+    "importlib_metadata>=4.8.3;python_version<\"3.10\"",
+    "jupyter_core>=4.12,!=5.0.*",
     "python-dateutil>=2.8.2",
     "pyzmq>=23.0",
     "tornado>=6.2",
-    "traitlets",
+    "traitlets>=5.3",
 ]
 
 [[project.authors]]
@@ -42,30 +37,33 @@ file = "README.md"
 content-type = "text/markdown"
 
 [project.license]
-file = "COPYING.md"
+file = "LICENSE"
 
 [project.urls]
 Homepage = "https://jupyter.org"
+Documentation = "https://jupyter-client.readthedocs.io/"
+Source = "https://github.com/jupyter/jupyter_client"
 
 [project.optional-dependencies]
 test = [
-    "codecov",
     "coverage",
-    "ipykernel>=6.12",
-    "ipython",
+    "ipykernel>=6.14",
     "mypy",
+    "paramiko; sys_platform == 'win32'",
     "pre-commit",
-    "pytest",
-    "pytest-asyncio>=0.18",
+    "pytest<8.2.0",
+    "pytest-jupyter[client]>=0.4.1",
     "pytest-cov",
     "pytest-timeout",
 ]
-doc = [
+docs = [
     "ipykernel",
     "myst-parser",
-    "sphinx>=1.3.6",
-    "sphinx_rtd_theme",
+    "sphinx>=4",
+    "pydata_sphinx_theme",
     "sphinxcontrib_github_alt",
+    "sphinxcontrib-spelling",
+    "sphinx-autodoc-typehints",
 ]
 
 [project.scripts]
@@ -76,92 +74,211 @@ jupyter-kernel = "jupyter_client.kernelapp:main"
 [project.entry-points."jupyter_client.kernel_provisioners"]
 local-provisioner = "jupyter_client.provisioning:LocalProvisioner"
 
-[tool.black]
-line-length = 100
-skip-string-normalization = true
-target_version = [
-    "py37",
-    "py38",
-    "py39",
-    "py310",
+[tool.hatch.version]
+path = "jupyter_client/_version.py"
+validate-bump = false
+
+[tool.hatch.envs.docs]
+features = ["docs"]
+[tool.hatch.envs.docs.scripts]
+build = "make -C docs html SPHINXOPTS='-W'"
+api = "sphinx-apidoc -o docs/api -f -E jupyter_client"
+
+[tool.hatch.envs.test]
+features = ["test"]
+[tool.hatch.envs.test.scripts]
+test = "python -m pytest -vv {args}"
+nowarn = "test -W default {args}"
+
+[tool.hatch.envs.cov]
+features = ["test"]
+dependencies = ["coverage[toml]", "pytest-cov"]
+[tool.hatch.envs.cov.scripts]
+test = "python -m pytest -vv --cov jupyter_client --cov-branch --cov-report term-missing:skip-covered {args}"
+nowarn = "test -W default {args}"
+
+[tool.hatch.envs.typing]
+dependencies = ["pre-commit"]
+detached = true
+[tool.hatch.envs.typing.scripts]
+test = "pre-commit run --all-files --hook-stage manual mypy"
+
+[tool.hatch.envs.lint]
+dependencies = ["pre-commit"]
+detached = true
+[tool.hatch.envs.lint.scripts]
+build = [
+  "pre-commit run --all-files ruff",
+  "pre-commit run --all-files ruff-format"
 ]
-
-[tool.jupyter-releaser]
-skip = ["check-links"]
-
-[tool.check-manifest]
-ignore = [".mailmap", "*.yml", "*.yaml"]
-
-[tool.tbump.version]
-current = "7.4.7"
-regex = '''
-  (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)
-  ((?P<channel>a|b|rc|.dev)(?P<release>\d+))?
-'''
-
-[tool.tbump.git]
-message_template = "Bump to {new_version}"
-tag_template = "v{new_version}"
-
-[[tool.tbump.file]]
-src = "jupyter_client/_version.py"
-
-[[tool.tbump.file]]
-src = "pyproject.toml"
 
 [tool.pytest.ini_options]
-addopts = "-raXs --durations 10 --color=yes --doctest-modules"
-testpaths = [
-    "jupyter_client/tests/"
+minversion = "6.0"
+xfail_strict = true
+log_cli_level = "info"
+addopts = [
+  "-raXs", "--durations=10", "--color=yes", "--doctest-modules",
+   "--showlocals", "--strict-markers", "--strict-config"
 ]
-timeout = 300
+testpaths = [
+    "jupyter_client",
+    "tests/"
+]
+timeout = 100
 # Restore this setting to debug failures
-# timeout_method = "thread"
-asyncio_mode = "auto"
+timeout_method = "thread"
 filterwarnings= [
   # Fail on warnings
   "error",
-
-  # We need to handle properly closing loops as part of https://github.com/jupyter/jupyter_client/issues/755.
-  "ignore:unclosed <socket.socket:ResourceWarning",
-  "ignore:unclosed event loop:ResourceWarning",
-
-  # Workaround for https://github.com/tornadoweb/tornado/issues/3106
-  # (To be fixed in Tornado 6.2)
-  "ignore:There is no current event loop:DeprecationWarning:tornado",
-
-  # ZMQ uses Future internally, which raises a DeprecationWarning
-  # When there is no loop running.
-  # We could eventually find a way to make sure these are only created
-  # when there is a running event loop.
-  "ignore:There is no current event loop:DeprecationWarning:zmq",
-
-  # Workaround for jupyter_core warning.
-  "module:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",
+  # from python-dateutil
+  "ignore:datetime.datetime.utcfromtimestamp:DeprecationWarning",
+  "ignore:datetime.datetime.utcnow:DeprecationWarning",
+  # from ipykernel 6 (fixed in 7)
+  "ignore:Parsing dates:DeprecationWarning:ipykernel.jsonutil",
 ]
 
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "if self.debug:",
+  "if settings.DEBUG",
+  "raise AssertionError",
+  "raise NotImplementedError",
+  "if 0:",
+  "if __name__ == .__main__.:",
+  "class .*\bProtocol\\):",
+"@(abc\\.)?abstractmethod",
+]
+omit = [
+    "jupyter_client/ssh/forward.py"
+]
+
+[tool.coverage.run]
+relative_files = true
+source = ["jupyter_client"]
+
 [tool.mypy]
-check_untyped_defs = true
+files = "jupyter_client"
+python_version = "3.8"
+strict = true
 disallow_any_generics = false
-disallow_incomplete_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 no_implicit_reexport = false
 pretty = true
 show_error_context = true
-show_error_codes = true
-strict_equality = true
-strict_optional = true
-warn_unused_configs = true
-warn_redundant_casts = true
 warn_return_any = false
-warn_unused_ignores = true
+warn_unreachable = true
 
-[[tool.mypy.overrides]]
-module = [
-    "traitlets.*",
-    "jupyter_core.*",
-    "ipykernel",
-    "entrypoints"
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+  "A",
+  "B",
+  "C",
+  "DTZ",
+  "E",
+  "EM",
+  "F",
+  "FBT",
+  "I",
+  "ICN",
+  "N",
+  "PLC",
+  "PLE",
+  "PLW",
+  "Q",
+  "RUF",
+  "S",
+  "SIM",
+  "T",
+  "TID",
+  "UP",
+  "W",
+  "YTT",
 ]
-ignore_missing_imports = true
+ignore = [
+  # Allow non-abstract empty methods in abstract base classes
+  "B027",
+  # Ignore McCabe complexity
+  "C901",
+  # Allow boolean positional values in function calls, like `dict.get(... True)`
+  "FBT003",
+  # Use of `assert` detected
+  "S101",
+  # Line too long
+  "E501",
+  # Relative imports are banned
+  "TID252",
+  # Boolean ... in function definition
+  "FBT001",
+  "FBT002",
+  # Module level import not at top of file
+  "E402",
+  # A001/A002/A003 .. is shadowing a python builtin
+  "A001",
+  "A002",
+  "A003",
+  # Possible hardcoded password
+  "S105",
+  "S106",
+  # Q000 Single quotes found but double quotes preferred
+  "Q000",
+  # N806 Variable `B` in function should be lowercase
+  "N806",
+  # SIM105 Use `contextlib.suppress(ValueError)` instead of try-except-pass
+  "SIM105",
+  # SIM108 [*] Use ternary operator
+  "SIM108",
+  # S110 `try`-`except`-`pass` detected, consider logging the exception
+  "S110",
+  # PLW0603 Using the global statement to update
+  "PLW0603",
+  # Mutable class attributes should be annotated with `typing.ClassVar`
+  "RUF012",
+  # non-pep585-annotation
+  "UP006",
+  # non-pep604-annotation
+  "UP007",
+
+]
+unfixable = [
+  # Don't touch print statements
+  "T201",
+  # Don't touch noqa lines
+  "RUF100",
+  # Imported but unused
+  "F401",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# B011 Do not call assert False since python -O removes these calls
+# F841 local variable 'foo' is assigned to but never used
+# C408 Unnecessary `dict` call
+# E402 Module level import not at top of file
+# T201 `print` found
+# B007 Loop control variable `i` not used within the loop body.
+# N802 Function name `assertIn` should be lowercase
+# EM101 Exception must not use a string literal, assign to variable first
+# PLR2004 Magic value used in comparison
+# S603 `subprocess` call: check for execution of untrusted input
+"tests/*" = ["B011", "F841", "C408", "E402", "T201", "B007", "N802", "EM101", "EM102", "PLR2004", "S603"]
+# T201 `print` found
+"*app.py" = ["T201"]
+# F401 `._version.__version__` imported but unused
+"jupyter_client/__init__.py" = ["F401"]
+
+[tool.interrogate]
+ignore-init-module=true
+ignore-private=true
+ignore-semiprivate=true
+ignore-property-decorators=true
+ignore-nested-functions=true
+ignore-nested-classes=true
+fail-under=90
+exclude = ["docs", "test"]
+
+[tool.repo-review]
+ignore = ["GH102"]

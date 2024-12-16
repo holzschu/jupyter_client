@@ -4,23 +4,27 @@ Useful for test suites and blocking terminal interfaces.
 """
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
+from __future__ import annotations
+
+import typing as t
+
 from traitlets import Type
 
+from ..channels import HBChannel, ZMQSocketChannel
+from ..client import KernelClient, reqrep
 from ..utils import run_sync
-from jupyter_client.channels import HBChannel
-from jupyter_client.channels import ZMQSocketChannel
-from jupyter_client.client import KernelClient
-from jupyter_client.client import reqrep
 
 
-def wrapped(meth, channel):
-    def _(self, *args, **kwargs):
+def wrapped(meth: t.Callable, channel: str) -> t.Callable:
+    """Wrap a method on a channel and handle replies."""
+
+    def _(self: BlockingKernelClient, *args: t.Any, **kwargs: t.Any) -> t.Any:
         reply = kwargs.pop("reply", False)
         timeout = kwargs.pop("timeout", None)
         msg_id = meth(self, *args, **kwargs)
         if not reply:
             return msg_id
-        return run_sync(self._async_recv_reply)(msg_id, timeout=timeout, channel=channel)
+        return self._recv_reply(msg_id, timeout=timeout, channel=channel)
 
     return _
 
@@ -44,11 +48,11 @@ class BlockingKernelClient(KernelClient):
     wait_for_ready = run_sync(KernelClient._async_wait_for_ready)
 
     # The classes to use for the various channels
-    shell_channel_class = Type(ZMQSocketChannel)
-    iopub_channel_class = Type(ZMQSocketChannel)
-    stdin_channel_class = Type(ZMQSocketChannel)
-    hb_channel_class = Type(HBChannel)
-    control_channel_class = Type(ZMQSocketChannel)
+    shell_channel_class = Type(ZMQSocketChannel)  # type:ignore[arg-type]
+    iopub_channel_class = Type(ZMQSocketChannel)  # type:ignore[arg-type]
+    stdin_channel_class = Type(ZMQSocketChannel)  # type:ignore[arg-type]
+    hb_channel_class = Type(HBChannel)  # type:ignore[arg-type]
+    control_channel_class = Type(ZMQSocketChannel)  # type:ignore[arg-type]
 
     _recv_reply = run_sync(KernelClient._async_recv_reply)
 

@@ -10,6 +10,8 @@ Sessions.
 """
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
+from __future__ import annotations
+
 import hashlib
 import hmac
 import json
@@ -21,41 +23,34 @@ import random
 import typing as t
 import warnings
 from binascii import b2a_hex
-from datetime import datetime
-from datetime import timezone
-from hmac import (
-    compare_digest,
-)  # We are using compare_digest to limit the surface of timing attacks
-from typing import Optional
-from typing import Union
+from datetime import datetime, timezone
+from hmac import compare_digest
 
+# We are using compare_digest to limit the surface of timing attacks
 import zmq.asyncio
-from traitlets import Any
-from traitlets import Bool
-from traitlets import CBytes
-from traitlets import CUnicode
-from traitlets import Dict
-from traitlets import DottedObjectName
-from traitlets import Instance
-from traitlets import Integer
-from traitlets import observe
-from traitlets import Set
-from traitlets import TraitError
-from traitlets import Unicode
-from traitlets.config.configurable import Configurable
-from traitlets.config.configurable import LoggingConfigurable
+from tornado.ioloop import IOLoop
+from traitlets import (
+    Any,
+    Bool,
+    CBytes,
+    CUnicode,
+    Dict,
+    DottedObjectName,
+    Instance,
+    Integer,
+    Set,
+    TraitError,
+    Unicode,
+    observe,
+)
+from traitlets.config.configurable import Configurable, LoggingConfigurable
 from traitlets.log import get_logger
 from traitlets.utils.importstring import import_item
-from zmq.eventloop.ioloop import IOLoop
 from zmq.eventloop.zmqstream import ZMQStream
 
-from jupyter_client import protocol_version
-from jupyter_client.adapter import adapt
-from jupyter_client.jsonutil import extract_dates
-from jupyter_client.jsonutil import json_clean
-from jupyter_client.jsonutil import json_default
-from jupyter_client.jsonutil import squash_dates
-
+from ._version import protocol_version
+from .adapter import adapt
+from .jsonutil import extract_dates, json_clean, json_default, squash_dates
 
 PICKLE_PROTOCOL = pickle.DEFAULT_PROTOCOL
 
@@ -66,10 +61,10 @@ utc = timezone.utc
 # -----------------------------------------------------------------------------
 
 
-def squash_unicode(obj):
+def squash_unicode(obj: t.Any) -> t.Any:
     """coerce unicode back to bytestrings."""
     if isinstance(obj, dict):
-        for key in obj.keys():
+        for key in list(obj.keys()):
             obj[key] = squash_unicode(obj[key])
             if isinstance(key, str):
                 obj[squash_unicode(key)] = obj.pop(key)
@@ -94,7 +89,8 @@ MAX_BYTES = 1024
 # disallow nan, because it's not actually valid JSON
 
 
-def json_packer(obj):
+def json_packer(obj: t.Any) -> bytes:
+    """Convert a json object to a bytes."""
     try:
         return json.dumps(
             obj,
@@ -121,13 +117,15 @@ def json_packer(obj):
         return packed
 
 
-def json_unpacker(s):
+def json_unpacker(s: str | bytes) -> t.Any:
+    """Convert a json bytes or string to an object."""
     if isinstance(s, bytes):
         s = s.decode("utf8", "replace")
     return json.loads(s)
 
 
-def pickle_packer(o):
+def pickle_packer(o: t.Any) -> bytes:
+    """Pack an object using the pickle module."""
     return pickle.dumps(squash_dates(o), PICKLE_PROTOCOL)
 
 
@@ -164,11 +162,11 @@ def new_id_bytes() -> bytes:
     return new_id().encode("ascii")
 
 
-session_aliases = dict(
-    ident="Session.session",
-    user="Session.username",
-    keyfile="Session.keyfile",
-)
+session_aliases = {
+    "ident": "Session.session",
+    "user": "Session.username",
+    "keyfile": "Session.keyfile",
+}
 
 session_flags = {
     "secure": (
@@ -184,23 +182,22 @@ session_flags = {
 }
 
 
-def default_secure(cfg: t.Any) -> None:
+def default_secure(cfg: t.Any) -> None:  # pragma: no cover
     """Set the default behavior for a config environment to be secure.
 
     If Session.key/keyfile have not been set, set Session.key to
     a new random UUID.
     """
-    warnings.warn("default_secure is deprecated", DeprecationWarning)
-    if "Session" in cfg:
-        if "key" in cfg.Session or "keyfile" in cfg.Session:
-            return
+    warnings.warn("default_secure is deprecated", DeprecationWarning, stacklevel=2)
+    if "Session" in cfg and ("key" in cfg.Session or "keyfile" in cfg.Session):
+        return
     # key/keyfile not specified, generate new UUID:
     cfg.Session.key = new_id_bytes()
 
 
 def utcnow() -> datetime:
     """Return timezone-aware UTC timestamp"""
-    return datetime.utcnow().replace(tzinfo=utc)
+    return datetime.now(utc)
 
 
 # -----------------------------------------------------------------------------
@@ -215,7 +212,7 @@ class SessionFactory(LoggingConfigurable):
 
     logname = Unicode("")
 
-    @observe("logname")  # type:ignore[misc]
+    @observe("logname")
     def _logname_changed(self, change: t.Any) -> None:
         self.log = logging.getLogger(change["new"])
 
@@ -229,10 +226,11 @@ class SessionFactory(LoggingConfigurable):
 
     loop = Instance("tornado.ioloop.IOLoop")
 
-    def _loop_default(self):
+    def _loop_default(self) -> IOLoop:
         return IOLoop.current()
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: t.Any) -> None:
+        """Initialize a session factory."""
         super().__init__(**kwargs)
 
         if self.session is None:
@@ -240,22 +238,23 @@ class SessionFactory(LoggingConfigurable):
             self.session = Session(**kwargs)
 
 
-class Message(object):
+class Message:
     """A simple message object that maps dict keys to attributes.
 
     A Message can be created from a dict and a dict from a Message instance
     simply by calling dict(msg_obj)."""
 
-    def __init__(self, msg_dict: t.Dict[str, t.Any]) -> None:
+    def __init__(self, msg_dict: dict[str, t.Any]) -> None:
+        """Initialize a message."""
         dct = self.__dict__
         for k, v in dict(msg_dict).items():
             if isinstance(v, dict):
-                v = Message(v)
+                v = Message(v)  # noqa
             dct[k] = v
 
     # Having this iterator lets dict(msg_obj) work out of the box.
     def __iter__(self) -> t.ItemsView[str, t.Any]:
-        return self.__dict__.items()
+        return iter(self.__dict__.items())  # type:ignore[return-value]
 
     def __repr__(self) -> str:
         return repr(self.__dict__)
@@ -270,14 +269,16 @@ class Message(object):
         return self.__dict__[k]
 
 
-def msg_header(msg_id: str, msg_type: str, username: str, session: "Session") -> t.Dict[str, t.Any]:
+def msg_header(
+    msg_id: str, msg_type: str, username: str, session: Session | str
+) -> dict[str, t.Any]:
     """Create a new message header"""
     date = utcnow()
     version = protocol_version
     return locals()
 
 
-def extract_header(msg_or_header: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+def extract_header(msg_or_header: dict[str, t.Any]) -> dict[str, t.Any]:
     """Given a message or header, return the header."""
     if not msg_or_header:
         return {}
@@ -358,7 +359,7 @@ class Session(Configurable):
     )
 
     @observe("packer")
-    def _packer_changed(self, change):
+    def _packer_changed(self, change: t.Any) -> None:
         new = change["new"]
         if new.lower() == "json":
             self.pack = json_packer
@@ -379,7 +380,7 @@ class Session(Configurable):
     )
 
     @observe("unpacker")
-    def _unpacker_changed(self, change):
+    def _unpacker_changed(self, change: t.Any) -> None:
         new = change["new"]
         if new.lower() == "json":
             self.pack = json_packer
@@ -400,7 +401,7 @@ class Session(Configurable):
         return u
 
     @observe("session")
-    def _session_changed(self, change):
+    def _session_changed(self, change: t.Any) -> None:
         self.bsession = self.session.encode("ascii")
 
     # bsession is the session as bytes
@@ -430,7 +431,7 @@ class Session(Configurable):
         return new_id_bytes()
 
     @observe("key")
-    def _key_changed(self, change):
+    def _key_changed(self, change: t.Any) -> None:
         self._new_auth()
 
     signature_scheme = Unicode(
@@ -441,7 +442,7 @@ class Session(Configurable):
     )
 
     @observe("signature_scheme")
-    def _signature_scheme_changed(self, change):
+    def _signature_scheme_changed(self, change: t.Any) -> None:
         new = change["new"]
         if not new.startswith("hmac-"):
             raise TraitError("signature_scheme must start with 'hmac-', got %r" % new)
@@ -478,7 +479,7 @@ class Session(Configurable):
     keyfile = Unicode("", config=True, help="""path to file containing execution key.""")
 
     @observe("keyfile")
-    def _keyfile_changed(self, change):
+    def _keyfile_changed(self, change: t.Any) -> None:
         with open(change["new"], "rb") as f:
             self.key = f.read().strip()
 
@@ -490,7 +491,7 @@ class Session(Configurable):
     pack = Any(default_packer)  # the actual packer function
 
     @observe("pack")
-    def _pack_changed(self, change):
+    def _pack_changed(self, change: t.Any) -> None:
         new = change["new"]
         if not callable(new):
             raise TypeError("packer must be callable, not %s" % type(new))
@@ -498,7 +499,7 @@ class Session(Configurable):
     unpack = Any(default_unpacker)  # the actual packer function
 
     @observe("unpack")
-    def _unpack_changed(self, change):
+    def _unpack_changed(self, change: t.Any) -> None:
         # unpacker is not checked - it is assumed to be
         new = change["new"]
         if not callable(new):
@@ -524,7 +525,7 @@ class Session(Configurable):
         """,
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: t.Any) -> None:
         """create a Session object
 
         Parameters
@@ -568,7 +569,7 @@ class Session(Configurable):
         self._check_packers()
         self.none = self.pack({})
         # ensure self._session_default() if necessary, so bsession is defined:
-        self.session
+        self.session  # noqa
         self.pid = os.getpid()
         self._new_auth()
         if not self.key:
@@ -576,7 +577,7 @@ class Session(Configurable):
                 "Message signing is disabled.  This is insecure and not recommended!"
             )
 
-    def clone(self) -> "Session":
+    def clone(self) -> Session:
         """Create a copy of this Session
 
         Useful when connecting multiple times to a given kernel.
@@ -608,13 +609,12 @@ class Session(Configurable):
         unpack = self.unpack
 
         # check simple serialization
-        msg_list = dict(a=[1, "hi"])
+        msg_list = {"a": [1, "hi"]}
         try:
             packed = pack(msg_list)
         except Exception as e:
-            raise ValueError(
-                f"packer '{self.packer}' could not serialize a simple message: {e}"
-            ) from e
+            msg = f"packer '{self.packer}' could not serialize a simple message: {e}"
+            raise ValueError(msg) from e
 
         # ensure packed message is bytes
         if not isinstance(packed, bytes):
@@ -625,32 +625,35 @@ class Session(Configurable):
             unpacked = unpack(packed)
             assert unpacked == msg_list
         except Exception as e:
-            raise ValueError(
+            msg = (
                 f"unpacker '{self.unpacker}' could not handle output from packer"
                 f" '{self.packer}': {e}"
-            ) from e
+            )
+            raise ValueError(msg) from e
 
         # check datetime support
-        msg_datetime = dict(t=utcnow())
+        msg_datetime = {"t": utcnow()}
         try:
             unpacked = unpack(pack(msg_datetime))
             if isinstance(unpacked["t"], datetime):
-                raise ValueError("Shouldn't deserialize to datetime")
+                msg = "Shouldn't deserialize to datetime"
+                raise ValueError(msg)
         except Exception:
             self.pack = lambda o: pack(squash_dates(o))
             self.unpack = lambda s: unpack(s)
 
-    def msg_header(self, msg_type: str) -> t.Dict[str, t.Any]:
+    def msg_header(self, msg_type: str) -> dict[str, t.Any]:
+        """Create a header for a message type."""
         return msg_header(self.msg_id, msg_type, self.username, self.session)
 
     def msg(
         self,
         msg_type: str,
-        content: t.Optional[t.Dict] = None,
-        parent: t.Optional[t.Dict[str, t.Any]] = None,
-        header: t.Optional[t.Dict[str, t.Any]] = None,
-        metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    ) -> t.Dict[str, t.Any]:
+        content: dict | None = None,
+        parent: dict[str, t.Any] | None = None,
+        header: dict[str, t.Any] | None = None,
+        metadata: dict[str, t.Any] | None = None,
+    ) -> dict[str, t.Any]:
         """Return the nested message dict.
 
         This format is different from what is sent over the wire. The
@@ -669,7 +672,7 @@ class Session(Configurable):
             msg["metadata"].update(metadata)
         return msg
 
-    def sign(self, msg_list: t.List) -> bytes:
+    def sign(self, msg_list: list) -> bytes:
         """Sign a message with HMAC digest. If no auth, return b''.
 
         Parameters
@@ -686,9 +689,9 @@ class Session(Configurable):
 
     def serialize(
         self,
-        msg: t.Dict[str, t.Any],
-        ident: t.Optional[t.Union[t.List[bytes], bytes]] = None,
-    ) -> t.List[bytes]:
+        msg: dict[str, t.Any],
+        ident: list[bytes] | bytes | None = None,
+    ) -> list[bytes]:
         """Serialize the message components to bytes.
 
         This is roughly the inverse of deserialize. The serialize/deserialize
@@ -750,16 +753,16 @@ class Session(Configurable):
 
     def send(
         self,
-        stream: Optional[Union[zmq.sugar.socket.Socket, ZMQStream]],
-        msg_or_type: t.Union[t.Dict[str, t.Any], str],
-        content: t.Optional[t.Dict[str, t.Any]] = None,
-        parent: t.Optional[t.Dict[str, t.Any]] = None,
-        ident: t.Optional[t.Union[bytes, t.List[bytes]]] = None,
-        buffers: t.Optional[t.List[bytes]] = None,
+        stream: zmq.sugar.socket.Socket | ZMQStream | None,
+        msg_or_type: dict[str, t.Any] | str,
+        content: dict[str, t.Any] | None = None,
+        parent: dict[str, t.Any] | None = None,
+        ident: bytes | list[bytes] | None = None,
+        buffers: list[bytes] | None = None,
         track: bool = False,
-        header: t.Optional[t.Dict[str, t.Any]] = None,
-        metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    ) -> t.Optional[t.Dict[str, t.Any]]:
+        header: dict[str, t.Any] | None = None,
+        metadata: dict[str, t.Any] | None = None,
+    ) -> dict[str, t.Any] | None:
         """Build and send a message via stream or socket.
 
         The message format used by this function internally is as follows:
@@ -808,7 +811,7 @@ class Session(Configurable):
             track = False
 
         if isinstance(stream, zmq.asyncio.Socket):
-            assert stream is not None
+            assert stream is not None  # type:ignore[unreachable]
             stream = zmq.Socket.shadow(stream.underlying)
 
         if isinstance(msg_or_type, (Message, dict)):
@@ -824,7 +827,7 @@ class Session(Configurable):
                 header=header,
                 metadata=metadata,
             )
-        if self.check_pid and not os.getpid() == self.pid:
+        if self.check_pid and os.getpid() != self.pid:
             get_logger().warning("WARNING: attempted to send message from fork\n%s", msg)
             return None
         buffers = [] if buffers is None else buffers
@@ -836,7 +839,8 @@ class Session(Configurable):
                     # check to see if buf supports the buffer protocol.
                     view = memoryview(buf)
                 except TypeError as e:
-                    raise TypeError("Buffer objects must support the buffer protocol.") from e
+                    emsg = "Buffer objects must support the buffer protocol."
+                    raise TypeError(emsg) from e
             # memoryview.contiguous is new in 3.3,
             # just skip the check on Python 2
             if hasattr(view, "contiguous") and not view.contiguous:
@@ -857,11 +861,13 @@ class Session(Configurable):
             # use dummy tracker, which will be done immediately
             tracker = DONE
             stream.send_multipart(to_send, copy=copy)
+        else:
+            tracker = DONE
 
         if self.debug:
-            pprint.pprint(msg)
-            pprint.pprint(to_send)
-            pprint.pprint(buffers)
+            pprint.pprint(msg)  # noqa
+            pprint.pprint(to_send)  # noqa
+            pprint.pprint(buffers)  # noqa
 
         msg["tracker"] = tracker
 
@@ -870,10 +876,10 @@ class Session(Configurable):
     def send_raw(
         self,
         stream: zmq.sugar.socket.Socket,
-        msg_list: t.List,
+        msg_list: list,
         flags: int = 0,
         copy: bool = True,
-        ident: t.Optional[t.Union[bytes, t.List[bytes]]] = None,
+        ident: bytes | list[bytes] | None = None,
     ) -> None:
         """Send a raw message via ident path.
 
@@ -900,6 +906,8 @@ class Session(Configurable):
         # Don't include buffers in signature (per spec).
         to_send.append(self.sign(msg_list[0:4]))
         to_send.extend(msg_list)
+        if isinstance(stream, zmq.asyncio.Socket):
+            stream = zmq.Socket.shadow(stream.underlying)
         stream.send_multipart(to_send, flags, copy=copy)
 
     def recv(
@@ -908,7 +916,7 @@ class Session(Configurable):
         mode: int = zmq.NOBLOCK,
         content: bool = True,
         copy: bool = True,
-    ) -> t.Tuple[t.Optional[t.List[bytes]], t.Optional[t.Dict[str, t.Any]]]:
+    ) -> tuple[list[bytes] | None, dict[str, t.Any] | None]:
         """Receive and unpack a message.
 
         Parameters
@@ -922,8 +930,11 @@ class Session(Configurable):
             [idents] is a list of idents and msg is a nested message dict of
             same format as self.msg returns.
         """
-        if isinstance(socket, ZMQStream):
-            socket = socket.socket
+        if isinstance(socket, ZMQStream):  # type:ignore[unreachable]
+            socket = socket.socket  # type:ignore[unreachable]
+        if isinstance(socket, zmq.asyncio.Socket):
+            socket = zmq.Socket.shadow(socket.underlying)
+
         try:
             msg_list = socket.recv_multipart(mode, copy=copy)
         except zmq.ZMQError as e:
@@ -943,8 +954,8 @@ class Session(Configurable):
             raise e
 
     def feed_identities(
-        self, msg_list: t.Union[t.List[bytes], t.List[zmq.Message]], copy: bool = True
-    ) -> t.Tuple[t.List[bytes], t.Union[t.List[bytes], t.List[zmq.Message]]]:
+        self, msg_list: list[bytes] | list[zmq.Message], copy: bool = True
+    ) -> tuple[list[bytes], list[bytes] | list[zmq.Message]]:
         """Split the identities from the rest of the message.
 
         Feed until DELIM is reached, then return the prefix as idents and
@@ -970,7 +981,7 @@ class Session(Configurable):
         if copy:
             msg_list = t.cast(t.List[bytes], msg_list)
             idx = msg_list.index(DELIM)
-            return msg_list[:idx], msg_list[idx + 1 :]  # noqa
+            return msg_list[:idx], msg_list[idx + 1 :]
         else:
             msg_list = t.cast(t.List[zmq.Message], msg_list)
             failed = True
@@ -979,8 +990,9 @@ class Session(Configurable):
                     failed = False
                     break
             if failed:
-                raise ValueError("DELIM not in msg_list")
-            idents, msg_list = msg_list[:idx], msg_list[idx + 1 :]  # noqa
+                msg = "DELIM not in msg_list"
+                raise ValueError(msg)
+            idents, msg_list = msg_list[:idx], msg_list[idx + 1 :]
             return [bytes(m.bytes) for m in idents], msg_list
 
     def _add_digest(self, signature: bytes) -> None:
@@ -1009,10 +1021,10 @@ class Session(Configurable):
 
     def deserialize(
         self,
-        msg_list: t.Union[t.List[bytes], t.List[zmq.Message]],
+        msg_list: list[bytes] | list[zmq.Message],
         content: bool = True,
         copy: bool = True,
-    ) -> t.Dict[str, t.Any]:
+    ) -> dict[str, t.Any]:
         """Unserialize a msg_list to a nested message dict.
 
         This is roughly the inverse of serialize. The serialize/deserialize
@@ -1049,7 +1061,8 @@ class Session(Configurable):
         if self.auth is not None:
             signature = msg_list[0]
             if not signature:
-                raise ValueError("Unsigned Message")
+                msg = "Unsigned Message"
+                raise ValueError(msg)
             if signature in self.digest_history:
                 raise ValueError("Duplicate Signature: %r" % signature)
             if content:
@@ -1057,9 +1070,11 @@ class Session(Configurable):
                 self._add_digest(signature)
             check = self.sign(msg_list[1:5])
             if not compare_digest(signature, check):
-                raise ValueError("Invalid Signature: %r" % signature)
+                msg = "Invalid Signature: %r" % signature
+                raise ValueError(msg)
         if not len(msg_list) >= minlen:
-            raise TypeError("malformed message, must have at least %i elements" % minlen)
+            msg = "malformed message, must have at least %i elements" % minlen
+            raise TypeError(msg)
         header = self.unpack(msg_list[1])
         message["header"] = extract_dates(header)
         message["msg_id"] = header["msg_id"]
@@ -1077,13 +1092,16 @@ class Session(Configurable):
             buffers = [memoryview(bytes(b.bytes)) for b in msg_list[5:]]
         message["buffers"] = buffers
         if self.debug:
-            pprint.pprint(message)
+            pprint.pprint(message)  # noqa
         # adapt to the current version
         return adapt(message)
 
-    def unserialize(self, *args: t.Any, **kwargs: t.Any) -> t.Dict[str, t.Any]:
+    def unserialize(self, *args: t.Any, **kwargs: t.Any) -> dict[str, t.Any]:
+        """**DEPRECATED** Use deserialize instead."""
+        # pragma: no cover
         warnings.warn(
             "Session.unserialize is deprecated. Use Session.deserialize.",
             DeprecationWarning,
+            stacklevel=2,
         )
         return self.deserialize(*args, **kwargs)
